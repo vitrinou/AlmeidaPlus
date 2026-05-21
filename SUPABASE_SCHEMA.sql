@@ -68,7 +68,7 @@ VALUES (
   'admin',
   true,
   false,
-  '["8", "119", "337", "307", "1899", "531", "350"]'
+  '["8", "119", "337", "307", "1899", "531"]'
 ) ON CONFLICT DO NOTHING;
 
 -- 7. INSERT DEFAULT PLATFORMS
@@ -79,8 +79,7 @@ VALUES
   ('337', 'Disney+', 'https://image.tmdb.org/t/p/original/97eaog45n2oa7LV6Xg582G541XH.png', 'https://disneyplus.com', 'disney.almeida@gmail.com', 'AlmeidaSenha123', 15.00, true),
   ('307', 'Globoplay', 'https://image.tmdb.org/t/p/original/vMj2Q30VxvNt0VAIQzb8ZQHWwNZ.png', 'https://globoplay.globo.com', 'globoplay.almeida@gmail.com', 'AlmeidaSenha123', 12.00, true),
   ('1899', 'HBO Max', 'https://image.tmdb.org/t/p/original/fksCUZ9QDWZMUwL2LgMtLckROUN.jpg', 'https://max.com', 'hbo.almeida@gmail.com', 'AlmeidaSenha123', 16.00, true),
-  ('531', 'Paramount+', 'https://image.tmdb.org/t/p/original/h5DcR0J2EESLitnhR8xLG1QymTE.jpg', 'https://paramountplus.com', 'paramount.almeida@gmail.com', 'AlmeidaSenha123', 9.00, true),
-  ('350', 'Apple TV+', 'https://image.tmdb.org/t/p/original/9ghgSC0MA082EL6HLCW3GalykFD.jpg', 'https://tv.apple.com', 'apple.almeida@gmail.com', 'AlmeidaSenha123', 11.00, true)
+  ('531', 'Paramount+', 'https://image.tmdb.org/t/p/original/h5DcR0J2EESLitnhR8xLG1QymTE.jpg', 'https://paramountplus.com', 'paramount.almeida@gmail.com', 'AlmeidaSenha123', 9.00, true)
 ON CONFLICT DO NOTHING;
 
 -- FEITO! Agora você pode usar o Supabase para sincronizar dados.

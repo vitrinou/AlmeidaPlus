@@ -180,7 +180,7 @@
         }
     </style>
 </head>
-<body className="bg-brandDark">
+<body class="bg-brandDark">
 
     <div id="root"></div>
 
@@ -192,17 +192,6 @@
         const TMDB_BEARER_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhZTFmZmRhZWVjNTI1ZGY5ZGI0YTQ4NDAzMDJhYTJmNSIsIm5iZiI6MTc3OTM2NDg0OS4yODgsInN1YiI6IjZhMGVmM2YxNjg5OTZmNWRiYmE5NWY3YSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.a7VG_t01ccy47ijSEtH6IpZJDC1AsgO9qFegjcLaHKY';
         const REGION = 'BR';
         const LANG = 'pt-BR';
-
-        // Predefined list of standard TMDB streaming providers in Brazil
-        const DEFAULT_PROVIDERS = [
-            { id: '8', name: 'Netflix', color: 'from-red-600 to-red-900', hoverColor: 'hover:border-red-500', logo: 'https://image.tmdb.org/t/p/original/wwemzKWzjKYJFfCeiBUpj376qRS.png', url: 'https://netflix.com' },
-            { id: '119', name: 'Amazon Prime Video', color: 'from-blue-600 to-sky-800', hoverColor: 'hover:border-blue-400', logo: 'https://image.tmdb.org/t/p/original/ceF6rD1uiL9V7rvWxugpa16t6HJ.png', url: 'https://primevideo.com' },
-            { id: '337', name: 'Disney+', color: 'from-teal-600 to-blue-900', hoverColor: 'hover:border-teal-400', logo: 'https://image.tmdb.org/t/p/original/97eaog45n2oa7LV6Xg582G541XH.png', url: 'https://disneyplus.com' },
-            { id: '307', name: 'Globoplay', color: 'from-orange-600 to-red-600', hoverColor: 'hover:border-orange-500', logo: 'https://image.tmdb.org/t/p/original/vMj2Q30VxvNt0VAIQzb8ZQHWwNZ.png', url: 'https://globoplay.globo.com' },
-            { id: '1899', name: 'HBO Max', color: 'from-purple-700 to-indigo-950', hoverColor: 'hover:border-purple-500', logo: 'https://image.tmdb.org/t/p/original/fksCUZ9QDWZMUwL2LgMtLckROUN.jpg', url: 'https://max.com' },
-            { id: '531', name: 'Paramount+', color: 'from-sky-700 to-blue-900', hoverColor: 'hover:border-sky-400', logo: 'https://image.tmdb.org/t/p/original/h5DcR0J2EESLitnhR8xLG1QymTE.jpg', url: 'https://paramountplus.com' },
-            { id: '350', name: 'Apple TV+', color: 'from-zinc-700 to-zinc-900', hoverColor: 'hover:border-zinc-400', logo: 'https://image.tmdb.org/t/p/original/9ghgSC0MA082EL6HLCW3GalykFD.jpg', url: 'https://tv.apple.com' }
-        ];
 
         // Preset Avatars for First-Time login setup
         const PRESET_AVATARS = [
@@ -462,7 +451,7 @@
                     </svg>
                 )
             };
-            return icons[name] || <span>ðŸ”</span>;
+            return icons[name] || <span className={className}>?</span>;
         };
 
         // Fallback Premium Movie Database expanded to 12 curated titles per provider
@@ -550,20 +539,6 @@
                 { id: 610, title: 'Dexter', backdrop_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=1200', vote_average: 8.7, overview: 'A jornada de Dexter Morgan, analista forense especialista em dispersão de sangue que leva uma vida dupla como serial killer que caça bandidos.', release_date: '2006-10-01', providerId: '531' },
                 { id: 611, title: 'Yellowjackets', backdrop_path: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=80&w=1200', vote_average: 7.9, overview: 'A saga de um time escolar de futebol feminino que sobrevive a uma queda de avião no interior de uma floresta remota em 1996.', release_date: '2021-11-14', providerId: '531' },
                 { id: 612, title: 'Californication', backdrop_path: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=1200', vote_average: 8.0, overview: 'Um romancista em crise criativa se muda para Los Angeles onde lida com seu bloqueio criativo, filhas rebeldes e relacionamentos voláteis.', release_date: '2007-08-13', providerId: '531' }
-            ],
-            '350': [ // Apple TV+
-                { id: 701, title: 'Ted Lasso', backdrop_path: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&q=80&w=1200', vote_average: 8.9, overview: 'Um treinador de futebol americano é contratado para comandar um time de futebol profissional na Inglaterra, apesar de não ter experiência no esporte.', release_date: '2020-08-14', providerId: '350' },
-                { id: 702, title: 'Ruptura', backdrop_path: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=1200', vote_average: 8.7, overview: 'Funcionários de uma misteriosa empresa passam por um procedimento cirúrgico que separa cirurgicamente suas memórias pessoais das profissionais.', release_date: '2022-02-18', providerId: '350' },
-                { id: 703, title: 'Silo', backdrop_path: 'https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&q=80&w=1200', vote_average: 8.3, overview: 'Em um futuro tóxico e arruinado, uma comunidade inteira vive em um silo subterrâneo gigante que se estende por centenas de andares abaixo da terra.', release_date: '2023-05-05', providerId: '350' },
-                { id: 704, title: 'The Morning Show', backdrop_path: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=1200', vote_average: 8.2, overview: 'Uma análise honesta dos bastidores de um noticiário matinal de TV de muito sucesso, após a demissão de um dos âncoras por acusações de conduta sexual imprópria.', release_date: '2019-11-01', providerId: '350' },
-                { id: 705, title: 'Fundação', backdrop_path: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1200', vote_average: 8.1, overview: 'Baseado na saga literária de Isaac Asimov, acompanha um grupo de exilados na tentativa épica de reconstruir a civilização galáctica.', release_date: '2021-09-24', providerId: '350' },
-                { id: 706, title: 'Sequestro no Ar', backdrop_path: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&q=80&w=1200', vote_average: 7.7, overview: 'Um experiente negociador corporativo tenta usar suas habilidades profissionais para desarmar e salvar passageiros de um voo sequestrado.', release_date: '2023-06-28', providerId: '350' },
-                { id: 707, title: 'For All Mankind', backdrop_path: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1200', vote_average: 8.4, overview: 'Numa realidade alternativa da corrida espacial, a União Soviética pousa na Lua antes dos Estados Unidos, abalando a NASA.', release_date: '2019-11-01', providerId: '350' },
-                { id: 708, title: 'Assassinos da Lua das Flores', backdrop_path: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=1200', vote_average: 8.0, overview: 'No início do século XX, membros da tribo indígena Osage em Oklahoma são assassinados misteriosamente após a descoberta de petróleo em suas terras.', release_date: '2023-10-18', providerId: '350' },
-                { id: 709, title: 'Servant', backdrop_path: 'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?auto=format&fit=crop&q=80&w=1200', vote_average: 7.6, overview: 'Um casal da Filadélfia contrata uma jovem babá para cuidar de um boneco terapêutico realista usado após a perda de seu bebê de três meses.', release_date: '2019-11-28', providerId: '350' },
-                { id: 710, title: 'Slow Horses', backdrop_path: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=1200', vote_average: 8.1, overview: 'Um drama de espionagem cheio de humor negro sobre um departamento de agentes renegados do MI5 mandados ao exílio burocrático na Slough House.', release_date: '2022-04-01', providerId: '350' },
-                { id: 711, title: 'Matéria Escura', backdrop_path: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=1200', vote_average: 8.2, overview: 'Um físico é sequestrado em uma versão alternativa de sua vida e precisa lutar para retornar Ã  sua família verdadeira em meio ao multiverso.', release_date: '2024-05-08', providerId: '350' },
-                { id: 712, title: 'Preacher', backdrop_path: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&q=80&w=1200', vote_average: 7.9, overview: 'Após um acontecimento misterioso na sua capela, um pastor do Texas com um passado sombrio recebe um poder sobrenatural inusitado.', release_date: '2016-05-22', providerId: '350' }
             ]
         };
 
@@ -616,36 +591,15 @@
         };
 
         function App() {
-            // --- GLOBAL STATE SIMULATING DATABASE ---
+            // --- GLOBAL STATE FROM SUPABASE ---
             const [users, setUsers] = useState(() => {
                 const saved = localStorage.getItem('ap_users');
-                if (saved) return JSON.parse(saved);
-                return [
-                    { id: 'allmeiids@gmail.com', name: 'Almeida (Admin)', email: 'allmeiids@gmail.com', password: 'Mudar@123', role: 'admin', active: true, platforms: ['8', '119', '337', '307', '1899', '531', '350'], avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150', isFirstLogin: true },
-                    { id: 'pedro@gmail.com', name: 'Pedro', email: 'pedro@gmail.com', password: '123', role: 'user', active: true, platforms: ['119'], avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=150', isFirstLogin: true },
-                    { id: 'rafael@gmail.com', name: 'Rafael', email: 'rafael@gmail.com', password: '123', role: 'user', active: true, platforms: ['337', '307'], avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150', isFirstLogin: true }
-                ];
+                return saved ? JSON.parse(saved) : [];
             });
 
             const [platforms, setPlatforms] = useState(() => {
                 const saved = localStorage.getItem('ap_platforms');
-                if (saved) return JSON.parse(saved);
-                return DEFAULT_PROVIDERS.map(p => {
-                    let initialOccupied = 0;
-                    if (p.id === '119') initialOccupied = 2;
-                    else if (p.id === '337') initialOccupied = 2;
-                    else if (p.id === '307') initialOccupied = 2;
-                    else initialOccupied = 1;
-                    return {
-                        ...p,
-                        totalSlots: 4,
-                        occupiedSlots: initialOccupied,
-                        price: p.id === '119' ? 10 : p.id === '337' ? 15 : p.id === '307' ? 12 : p.id === '8' ? 18 : p.id === '1899' ? 16 : p.id === '531' ? 9 : 11,
-                        enabled: true,
-                        email: `${p.name.toLowerCase().replace(/\s+/g, '')}.almeida@gmail.com`,
-                        password: 'AlmeidaSenha123'
-                    };
-                });
+                return saved ? JSON.parse(saved) : [];
             });
 
             // --- VIEW ROUTING STATE ---
@@ -738,24 +692,25 @@
                 [...loginMarqueeMovies.slice(24, 40), ...loginMarqueeMovies.slice(24, 40)]
             ];
 
-            // --- SYNCS ---            useEffect(() => {
-                const loadData = async () => {
-                    if (window.supabase) {
-                        try {
-                            const dbPlatforms = await window.supabase.getPlatforms();
+            // --- SYNCS ---
+            useEffect(() => {
+                if (window.supabase) {
+                    window.supabase.getPlatforms()
+                        .then(dbPlatforms => {
                             if (dbPlatforms && dbPlatforms.length > 0) {
                                 setPlatforms(dbPlatforms);
                             }
-                            const dbUsers = await window.supabase.getAllUsers();
+                        })
+                        .catch(e => console.error('Supabase load error', e));
+
+                    window.supabase.getAllUsers()
+                        .then(dbUsers => {
                             if (dbUsers && dbUsers.length > 0) {
                                 setUsers(dbUsers);
                             }
-                        } catch(e) {
-                            console.error('Supabase load error', e);
-                        }
-                    }
-                };
-                loadData();
+                        })
+                        .catch(e => console.error('Supabase users load error', e));
+                }
             }, []);
             useEffect(() => {
                 localStorage.setItem('ap_users', JSON.stringify(users));
@@ -767,59 +722,17 @@
 
             useEffect(() => {
                 // Startup database migration
-                // 1. Migrate Globoplay ID from 11 to 307 for users
-                setUsers(prev => prev.map(u => {
-                    let changed = false;
-                    const updatedPlats = u.platforms.map(pid => {
-                        if (pid === '11') {
-                            changed = true;
-                            return '307';
-                        }
-                        return pid;
-                    });
-                    return changed ? { ...u, platforms: updatedPlats } : u;
-                }));
+                // 1. Migrate Globoplay ID from 11 to 307 for users if present
+                setUsers(prev => prev.map(u => ({
+                    ...u,
+                    platforms: u.platforms.map(pid => pid === '11' ? '307' : pid)
+                })));
 
-                // 2. Migrate platforms array: map Globoplay ID from 11 to 307, update default logos
-                setPlatforms(prev => {
-                    let updated = prev.map(p => {
-                        let id = p.id;
-                        if (id === '11') id = '307';
-
-                        const defaultPlat = DEFAULT_PROVIDERS.find(dp => dp.id === id);
-                        if (defaultPlat) {
-                            return {
-                                ...p,
-                                id,
-                                name: defaultPlat.name,
-                                logo: defaultPlat.logo, // Overwrite with clean TMDB path
-                                color: defaultPlat.color,
-                                hoverColor: defaultPlat.hoverColor,
-                                url: defaultPlat.url,
-                                email: p.email || `${defaultPlat.name.toLowerCase().replace(/\s+/g, '')}.almeida@gmail.com`,
-                                password: p.password || 'AlmeidaSenha123'
-                            };
-                        }
-                        return p;
-                    });
-
-                    // Ensure all DEFAULT_PROVIDERS are present in platforms state
-                    DEFAULT_PROVIDERS.forEach(dp => {
-                        if (!updated.some(p => p.id === dp.id)) {
-                            updated.push({
-                                ...dp,
-                                totalSlots: 4,
-                                occupiedSlots: 1,
-                                price: dp.id === '119' ? 10 : dp.id === '337' ? 15 : dp.id === '307' ? 12 : dp.id === '8' ? 18 : dp.id === '1899' ? 16 : dp.id === '531' ? 9 : 11,
-                                enabled: true,
-                                email: `${dp.name.toLowerCase().replace(/\s+/g, '')}.almeida@gmail.com`,
-                                password: 'AlmeidaSenha123'
-                            });
-                        }
-                    });
-
-                    return updated;
-                });
+                // 2. Migrate platforms array ID 11 to 307 if the DB still has old values
+                setPlatforms(prev => prev.map(p => ({
+                    ...p,
+                    id: p.id === '11' ? '307' : p.id
+                })));
             }, []);
 
             useEffect(() => {
@@ -1052,18 +965,18 @@
             const getMovieProvider = (movie) => {
                 if (!movie) return null;
                 
-                // Se um streaming específico está selecionado (não é 'all'), retorna APENAS esse
+                // Verificar se tem providerId específico
+                if (movie.providerId) {
+                    const p = platforms.find(x => x.id === movie.providerId);
+                    if (p) return p;
+                }
+                
+                // Se um streaming específico está selecionado (não é 'all'), retorna esse provedor filtrado
                 if (activePlatformId !== 'all' && activePlatformId) {
                     const selectedPlatform = platforms.find(p => p.id === activePlatformId);
                     if (selectedPlatform && selectedPlatform.enabled) {
                         return selectedPlatform;
                     }
-                }
-                
-                // Verificar se tem providerId específico
-                if (movie.providerId) {
-                    const p = platforms.find(x => x.id === movie.providerId);
-                    if (p) return p;
                 }
                 
                 // Verificar em FALLBACK_MOVIES
@@ -2063,8 +1976,62 @@
 
 
                                 {/* ======================================================== */}
-                                {/*                 3. DETAILED PAYMENT SCREEN               */}
+                                {/*                     3. MEUS ACESSOS                      */}
                                 {/* ======================================================== */}
+                                {currentRoute === 'acessos' && (
+                                    <main className="flex-1 flex flex-col gap-6 min-w-0">
+                                        <div className="glass-panel rounded-2xl p-6 flex flex-col gap-4">
+                                            <h2 className="text-2xl font-extrabold text-white tracking-tight">Meus Acessos</h2>
+                                            <p className="text-sm text-slate-400">Suas credenciais para os serviços de streaming liberados.</p>
+                                            
+                                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
+                                                {accessiblePlatforms.length === 0 ? (
+                                                    <p className="text-slate-400">Nenhum acesso liberado para sua conta no momento.</p>
+                                                ) : (
+                                                    accessiblePlatforms.map(p => (
+                                                        <div key={p.id} className="glass-panel rounded-2xl overflow-hidden shadow-xl border border-white/5 flex flex-col group">
+                                                            <div className={`h-1.5 w-full bg-gradient-to-r ${p.color}`} />
+                                                            <div className="p-6 flex flex-col items-center flex-1 gap-4">
+                                                                <SafeLogo logo={p.logo} name={p.name} className="h-16 w-auto object-contain mb-2 drop-shadow-lg" />
+                                                                <h3 className="text-lg font-bold text-white text-center">{p.name}</h3>
+                                                                
+                                                                <div className="w-full mt-4 space-y-3 bg-black/30 p-4 rounded-xl border border-white/5">
+                                                                    <div>
+                                                                        <label className="text-[10px] text-slate-500 uppercase tracking-wider font-bold block mb-1">E-mail de Acesso</label>
+                                                                        <div className="flex items-center justify-between gap-2 bg-black/40 px-3 py-2 rounded-lg border border-white/10">
+                                                                            <span className="text-xs text-brandAccent font-mono truncate">{p.email}</span>
+                                                                            <button onClick={() => copyText(p.email, 'E-mail copiado!')} className="text-slate-400 hover:text-white transition-colors" title="Copiar E-mail">
+                                                                                <Icon name="copy" className="w-4 h-4" />
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-[10px] text-slate-500 uppercase tracking-wider font-bold block mb-1">Senha de Acesso</label>
+                                                                        <div className="flex items-center justify-between gap-2 bg-black/40 px-3 py-2 rounded-lg border border-white/10">
+                                                                            <span className="text-xs text-brandViolet font-mono truncate">{p.password}</span>
+                                                                            <button onClick={() => copyText(p.password, 'Senha copiada!')} className="text-slate-400 hover:text-white transition-colors" title="Copiar Senha">
+                                                                                <Icon name="copy" className="w-4 h-4" />
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                <a 
+                                                                    href={p.url} 
+                                                                    target="_blank"
+                                                                    className={`mt-auto w-full py-3 rounded-xl bg-gradient-to-r ${p.color} text-white text-xs font-bold tracking-wider text-center shadow-lg hover:brightness-110 transition-all uppercase flex items-center justify-center gap-2`}
+                                                                >
+                                                                    <span>Acessar {p.name}</span>
+                                                                    <Icon name="chevronRight" className="w-4 h-4" />
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        </div>
+                                    </main>
+                                )}
                                 {/* ======================================================== */}
                                 {/*             4. ADMINISTRATOR CONTROL PANEL               */}
                                 {/* ======================================================== */}
