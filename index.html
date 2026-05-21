@@ -19,6 +19,9 @@
     <!-- Tailwind CSS v3 -->
     <script src="https://cdn.tailwindcss.com"></script>
 
+    <!-- Supabase Client -->
+    <script src="./supabase-client.js"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -49,6 +52,12 @@
         }
     </script>
     <style>
+        :root {
+            /* Altere a cor do texto ALMEIDA aqui (ex: white, #FF0000) */
+            --logo-text-color: #FFFFFF;
+            /* Altere a cor do + aqui (ex: #3B82F6, red) */
+            --logo-plus-color: #3B82F6;
+        }
         @keyframes float {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-6px); }
@@ -459,102 +468,102 @@
         // Fallback Premium Movie Database expanded to 12 curated titles per provider
         const FALLBACK_MOVIES = {
             '8': [ // Netflix
-                { id: 101, title: 'Stranger Things', backdrop_path: 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?auto=format&fit=crop&q=80&w=1200', vote_average: 8.9, overview: 'Em uma cidade pequena, um grupo de amigos descobre um mistÃ©rio sobrenatural envolvendo experimentos secretos do governo.', release_date: '2016-07-15', providerId: '8' },
-                { id: 102, title: 'Round 6', backdrop_path: 'https://images.unsplash.com/photo-1594909122845-11baa439b7bf?auto=format&fit=crop&q=80&w=1200', vote_average: 8.5, overview: 'Centenas de jogadores falidos aceitam um convite estranho para competir em jogos infantis por um prÃªmio milionÃ¡rio.', release_date: '2021-09-17', providerId: '8' },
-                { id: 103, title: 'La Casa de Papel', backdrop_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=1200', vote_average: 8.7, overview: 'Oito ladrÃµes fazem refÃ©ns na Casa da Moeda da Espanha enquanto o lÃ­der planeja manipular a polÃ­cia.', release_date: '2017-05-02', providerId: '8' },
-                { id: 104, title: 'The Witcher', backdrop_path: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=1200', vote_average: 8.2, overview: 'O mutante Geralt de RÃ­via, um caÃ§ador de monstros, luta para encontrar seu lugar em um mundo onde as pessoas provam ser mais cruÃ©is que as feras.', release_date: '2019-12-20', providerId: '8' },
-                { id: 105, title: 'Black Mirror', backdrop_path: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=1200', vote_average: 8.8, overview: 'Esta sÃ©rie de antologia de ficÃ§Ã£o cientÃ­fica explora um futuro prÃ³ximo de alta tecnologia onde as maiores inovaÃ§Ãµes da humanidade colidem com seus instintos mais sombrios.', release_date: '2011-12-04', providerId: '8' },
-                { id: 106, title: 'Cobra Kai', backdrop_path: 'https://images.unsplash.com/photo-1555597673-b21d5c935865?auto=format&fit=crop&q=80&w=1200', vote_average: 8.0, overview: 'DÃ©cadas depois de competir no torneio que mudou suas vidas, a rivalidade entre Johnny e Daniel estÃ¡ de volta nesta sequÃªncia de Karate Kid.', release_date: '2018-05-02', providerId: '8' },
-                { id: 107, title: 'Lupin', backdrop_path: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=1200', vote_average: 7.9, overview: 'Inspirado pelas aventuras de ArsÃ¨ne Lupin, o ladrÃ£o gentil Assane Diop quer se vingar de uma famÃ­lia rica por uma injustiÃ§a cometida contra seu pai.', release_date: '2021-01-08', providerId: '8' },
-                { id: 108, title: 'Narcos', backdrop_path: 'https://images.unsplash.com/photo-1535016120720-40c646be5580?auto=format&fit=crop&q=80&w=1200', vote_average: 8.8, overview: 'A histÃ³ria real do surgimento e propagaÃ§Ã£o dos cartÃ©is de cocaÃ­na por todo o globo e os esforÃ§os da lei para detÃª-los.', release_date: '2015-08-28', providerId: '8' },
-                { id: 109, title: 'Dark', backdrop_path: 'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?auto=format&fit=crop&q=80&w=1200', vote_average: 8.9, overview: 'O desaparecimento de duas crianÃ§as em uma cidade alemÃ£ expÃµe as relaÃ§Ãµes fraturadas e vidas duplas de quatro famÃ­lias.', release_date: '2017-12-01', providerId: '8' },
-                { id: 110, title: 'Mindhunter', backdrop_path: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=1200', vote_average: 8.6, overview: 'Dois agentes do FBI expandem as fronteiras da ciÃªncia criminal nos anos 70 ao entrevistar serial killers presos.', release_date: '2017-10-13', providerId: '8' },
-                { id: 111, title: 'Peaky Blinders', backdrop_path: 'https://images.unsplash.com/photo-1508921912186-1d1a45ebb3c1?auto=format&fit=crop&q=80&w=1200', vote_average: 8.8, overview: 'Uma famÃ­lia de gÃ¢ngsteres da Inglaterra de 1919 Ã© liderada pelo ambicioso e perigoso Tommy Shelby.', release_date: '2013-09-12', providerId: '8' },
-                { id: 112, title: 'Bridgerton', backdrop_path: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=1200', vote_average: 8.1, overview: 'Oito irmÃ£os unidos da famÃ­lia Bridgerton buscam amor e felicidade na alta sociedade de Londres.', release_date: '2020-12-25', providerId: '8' }
+                { id: 101, title: 'Stranger Things', backdrop_path: 'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?auto=format&fit=crop&q=80&w=1200', vote_average: 8.9, overview: 'Em uma cidade pequena, um grupo de amigos descobre um mistério sobrenatural envolvendo experimentos secretos do governo.', release_date: '2016-07-15', providerId: '8' },
+                { id: 102, title: 'Round 6', backdrop_path: 'https://images.unsplash.com/photo-1594909122845-11baa439b7bf?auto=format&fit=crop&q=80&w=1200', vote_average: 8.5, overview: 'Centenas de jogadores falidos aceitam um convite estranho para competir em jogos infantis por um prêmio milionário.', release_date: '2021-09-17', providerId: '8' },
+                { id: 103, title: 'La Casa de Papel', backdrop_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=1200', vote_average: 8.7, overview: 'Oito ladrões fazem reféns na Casa da Moeda da Espanha enquanto o líder planeja manipular a polícia.', release_date: '2017-05-02', providerId: '8' },
+                { id: 104, title: 'The Witcher', backdrop_path: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=1200', vote_average: 8.2, overview: 'O mutante Geralt de Rívia, um caçador de monstros, luta para encontrar seu lugar em um mundo onde as pessoas provam ser mais cruéis que as feras.', release_date: '2019-12-20', providerId: '8' },
+                { id: 105, title: 'Black Mirror', backdrop_path: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=1200', vote_average: 8.8, overview: 'Esta série de antologia de ficção científica explora um futuro próximo de alta tecnologia onde as maiores inovações da humanidade colidem com seus instintos mais sombrios.', release_date: '2011-12-04', providerId: '8' },
+                { id: 106, title: 'Cobra Kai', backdrop_path: 'https://images.unsplash.com/photo-1555597673-b21d5c935865?auto=format&fit=crop&q=80&w=1200', vote_average: 8.0, overview: 'Décadas depois de competir no torneio que mudou suas vidas, a rivalidade entre Johnny e Daniel está de volta nesta sequência de Karate Kid.', release_date: '2018-05-02', providerId: '8' },
+                { id: 107, title: 'Lupin', backdrop_path: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=1200', vote_average: 7.9, overview: 'Inspirado pelas aventuras de Arsène Lupin, o ladrão gentil Assane Diop quer se vingar de uma família rica por uma injustiça cometida contra seu pai.', release_date: '2021-01-08', providerId: '8' },
+                { id: 108, title: 'Narcos', backdrop_path: 'https://images.unsplash.com/photo-1535016120720-40c646be5580?auto=format&fit=crop&q=80&w=1200', vote_average: 8.8, overview: 'A história real do surgimento e propagação dos cartéis de cocaína por todo o globo e os esforços da lei para detê-los.', release_date: '2015-08-28', providerId: '8' },
+                { id: 109, title: 'Dark', backdrop_path: 'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?auto=format&fit=crop&q=80&w=1200', vote_average: 8.9, overview: 'O desaparecimento de duas crianças em uma cidade alemã expõe as relações fraturadas e vidas duplas de quatro famílias.', release_date: '2017-12-01', providerId: '8' },
+                { id: 110, title: 'Mindhunter', backdrop_path: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=1200', vote_average: 8.6, overview: 'Dois agentes do FBI expandem as fronteiras da ciência criminal nos anos 70 ao entrevistar serial killers presos.', release_date: '2017-10-13', providerId: '8' },
+                { id: 111, title: 'Peaky Blinders', backdrop_path: 'https://images.unsplash.com/photo-1508921912186-1d1a45ebb3c1?auto=format&fit=crop&q=80&w=1200', vote_average: 8.8, overview: 'Uma família de gângsteres da Inglaterra de 1919 é liderada pelo ambicioso e perigoso Tommy Shelby.', release_date: '2013-09-12', providerId: '8' },
+                { id: 112, title: 'Bridgerton', backdrop_path: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=1200', vote_average: 8.1, overview: 'Oito irmãos unidos da família Bridgerton buscam amor e felicidade na alta sociedade de Londres.', release_date: '2020-12-25', providerId: '8' }
             ],
             '119': [ // Prime Video
-                { id: 201, title: 'The Boys', backdrop_path: 'https://images.unsplash.com/photo-1618336753974-aae8e04506aa?auto=format&fit=crop&q=80&w=1200', vote_average: 8.8, overview: 'Em um world onde super-herÃ³is abraÃ§am o lado negro da fama, um grupo de vigilantes se propÃµe a derrubar os corruptos.', release_date: '2019-07-26', providerId: '119' },
-                { id: 202, title: 'InvencÃ­vel', backdrop_path: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&q=80&w=1200', vote_average: 8.7, overview: 'Um adolescente descobre que seu pai Ã© o super-herÃ³i mais poderoso do planeta e herda suas prÃ³prias habilidades.', release_date: '2021-03-25', providerId: '119' },
-                { id: 203, title: 'AnÃ©is de Poder', backdrop_path: 'https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&q=80&w=1200', vote_average: 7.9, overview: 'Drama Ã©pico ambientado milhares de anos antes dos eventos de O Hobbit e O Senhor dos AnÃ©is de J.R.R. Tolkien.', release_date: '2022-09-01', providerId: '119' },
-                { id: 204, title: 'Fallout', backdrop_path: 'https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?auto=format&fit=crop&q=80&w=1200', vote_average: 8.5, overview: 'Duzentos anos apÃ³s o apocalipse nuclear, uma habitante pacÃ­fica de um refÃºgio de luxo Ã© forÃ§ada a retornar Ã  superfÃ­cie e se depara com uma terra devastada inacreditavelmente violenta.', release_date: '2024-04-10', providerId: '119' },
-                { id: 205, title: 'Reacher', backdrop_path: 'https://images.unsplash.com/photo-1508921912186-1d1a45ebb3c1?auto=format&fit=crop&q=80&w=1200', vote_average: 8.1, overview: 'O veterano investigador militar Jack Reacher Ã© acusado injustamente de um assassinato brutal e logo se vÃª no centro de uma conspiraÃ§Ã£o mortal.', release_date: '2022-02-04', providerId: '119' },
+                { id: 201, title: 'The Boys', backdrop_path: 'https://images.unsplash.com/photo-1618336753974-aae8e04506aa?auto=format&fit=crop&q=80&w=1200', vote_average: 8.8, overview: 'Em um world onde super-heróis abraçam o lado negro da fama, um grupo de vigilantes se propõe a derrubar os corruptos.', release_date: '2019-07-26', providerId: '119' },
+                { id: 202, title: 'Invencível', backdrop_path: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&q=80&w=1200', vote_average: 8.7, overview: 'Um adolescente descobre que seu pai é o super-herói mais poderoso do planeta e herda suas próprias habilidades.', release_date: '2021-03-25', providerId: '119' },
+                { id: 203, title: 'Anéis de Poder', backdrop_path: 'https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&q=80&w=1200', vote_average: 7.9, overview: 'Drama épico ambientado milhares de anos antes dos eventos de O Hobbit e O Senhor dos Anéis de J.R.R. Tolkien.', release_date: '2022-09-01', providerId: '119' },
+                { id: 204, title: 'Fallout', backdrop_path: 'https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?auto=format&fit=crop&q=80&w=1200', vote_average: 8.5, overview: 'Duzentos anos após o apocalipse nuclear, uma habitante pacífica de um refúgio de luxo é forçada a retornar Ã  superfície e se depara com uma terra devastada inacreditavelmente violenta.', release_date: '2024-04-10', providerId: '119' },
+                { id: 205, title: 'Reacher', backdrop_path: 'https://images.unsplash.com/photo-1508921912186-1d1a45ebb3c1?auto=format&fit=crop&q=80&w=1200', vote_average: 8.1, overview: 'O veterano investigador militar Jack Reacher é acusado injustamente de um assassinato brutal e logo se vê no centro de uma conspiração mortal.', release_date: '2022-02-04', providerId: '119' },
                 { id: 206, title: 'Fleabag', backdrop_path: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=1200', vote_average: 8.7, overview: 'Uma jovem inteligente, inquieta e sexualmente ativa tenta lidar com a dor do luto e com a vida moderna em Londres.', release_date: '2016-07-21', providerId: '119' },
-                { id: 207, title: 'A Roda do Tempo', backdrop_path: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=1200', vote_average: 7.5, overview: 'A vida de cinco jovens muda para sempre com a chegada de uma mulher estranha e poderosa, que afirma que um deles Ã© a reencarnaÃ§Ã£o de uma entidade lendÃ¡ria.', release_date: '2021-11-19', providerId: '119' },
-                { id: 208, title: 'Mr. & Mrs. Smith', backdrop_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=1200', vote_average: 7.3, overview: 'Dois estranhos solitÃ¡rios conseguem empregos em uma misteriosa agÃªncia de espionagem que lhes oferece uma vida gloriosa de espionagem, riqueza e um casamento arranjado.', release_date: '2024-02-02', providerId: '119' },
-                { id: 209, title: 'Jack Ryan', backdrop_path: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=1200', vote_average: 8.0, overview: 'Um analista promissor da CIA Ã© lanÃ§ado em uma tarefa de campo perigosa pela primeira vez apÃ³s descobrir padrÃµes de comunicaÃ§Ã£o terrorista.', release_date: '2018-08-31', providerId: '119' },
-                { id: 210, title: 'Bosch', backdrop_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1200', vote_average: 8.2, overview: 'Um detetive de homicÃ­dios de Los Angeles enfrenta julgamento por atirar em um suspeito de assassinato em sÃ©rie enquanto investiga o esqueleto de um garoto.', release_date: '2014-02-06', providerId: '119' },
-                { id: 211, title: 'Maravilhosa Sra. Maisel', backdrop_path: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=1200', vote_average: 8.4, overview: 'Em 1958 em Nova York, a vida de Midge Maisel estÃ¡ nos eixos: marido, filhos e elegantes jantares em seu apartamento. Mas tudo muda quando ela descobre um talento para comÃ©dia stand-up.', release_date: '2017-03-17', providerId: '119' },
-                { id: 212, title: 'Undone', backdrop_path: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=80&w=1200', vote_average: 8.1, overview: 'ApÃ³s um acidente de carro quase fatal, Alma descobre que possui uma nova relaÃ§Ã£o com o tempo e usa essa habilidade para desvendar a morte de seu pai.', release_date: '2019-09-13', providerId: '119' }
+                { id: 207, title: 'A Roda do Tempo', backdrop_path: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=1200', vote_average: 7.5, overview: 'A vida de cinco jovens muda para sempre com a chegada de uma mulher estranha e poderosa, que afirma que um deles é a reencarnação de uma entidade lendária.', release_date: '2021-11-19', providerId: '119' },
+                { id: 208, title: 'Mr. & Mrs. Smith', backdrop_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=1200', vote_average: 7.3, overview: 'Dois estranhos solitários conseguem empregos em uma misteriosa agência de espionagem que lhes oferece uma vida gloriosa de espionagem, riqueza e um casamento arranjado.', release_date: '2024-02-02', providerId: '119' },
+                { id: 209, title: 'Jack Ryan', backdrop_path: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=1200', vote_average: 8.0, overview: 'Um analista promissor da CIA é lançado em uma tarefa de campo perigosa pela primeira vez após descobrir padrões de comunicação terrorista.', release_date: '2018-08-31', providerId: '119' },
+                { id: 210, title: 'Bosch', backdrop_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1200', vote_average: 8.2, overview: 'Um detetive de homicídios de Los Angeles enfrenta julgamento por atirar em um suspeito de assassinato em série enquanto investiga o esqueleto de um garoto.', release_date: '2014-02-06', providerId: '119' },
+                { id: 211, title: 'Maravilhosa Sra. Maisel', backdrop_path: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=1200', vote_average: 8.4, overview: 'Em 1958 em Nova York, a vida de Midge Maisel está nos eixos: marido, filhos e elegantes jantares em seu apartamento. Mas tudo muda quando ela descobre um talento para comédia stand-up.', release_date: '2017-03-17', providerId: '119' },
+                { id: 212, title: 'Undone', backdrop_path: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=80&w=1200', vote_average: 8.1, overview: 'Após um acidente de carro quase fatal, Alma descobre que possui uma nova relação com o tempo e usa essa habilidade para desvendar a morte de seu pai.', release_date: '2019-09-13', providerId: '119' }
             ],
             '337': [ // Disney+
-                { id: 301, title: 'The Mandalorian', backdrop_path: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&q=80&w=1200', vote_average: 8.9, overview: 'As viagens de um caÃ§ador de recompensas solitÃ¡rio nos confins da galÃ¡xia, longe da autoridade da Nova RepÃºblica.', release_date: '2019-11-12', providerId: '337' },
-                { id: 302, title: 'Loki', backdrop_path: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=1200', vote_average: 8.6, overview: 'O Deus da TrapaÃ§a sai da sombra de seu irmÃ£o em uma nova sÃ©rie que ocorre apÃ³s os eventos de Vingadores: Ultimato.', release_date: '2021-06-09', providerId: '337' },
-                { id: 303, title: 'WandaVision', backdrop_path: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&q=80&w=1200', vote_average: 8.3, overview: 'Wanda Maximoff e VisÃ£o, dois seres superpoderosos, vivem a vida suburbana ideal, mas comeÃ§am a suspeitar que nem tudo Ã© o que parece.', release_date: '2021-01-15', providerId: '337' },
-                { id: 304, title: 'Zootopia 2', backdrop_path: 'https://images.unsplash.com/photo-1608889175123-8ec330b86f84?auto=format&fit=crop&q=80&w=1200', vote_average: 7.8, overview: 'Judy Hopps e Nick Wilde retornam para resolver um novo caso emocionante na metrÃ³pole cheia de animais.', release_date: '2025-03-01', providerId: '337' },
-                { id: 305, title: 'Divertidamente 2', backdrop_path: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=1200', vote_average: 8.4, overview: 'Riley agora Ã© uma adolescente e sua mente passa por uma reforma para dar lugar a algo totalmente inesperado: novas emoÃ§Ãµes.', release_date: '2024-06-14', providerId: '337' },
-                { id: 306, title: 'Ahsoka', backdrop_path: 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&q=80&w=1200', vote_average: 7.7, overview: 'Ambientada apÃ³s a queda do ImpÃ©rio, a ex-cavaleira Jedi Ahsoka Tano investiga uma ameaÃ§a emergente a uma galÃ¡xia vulnerÃ¡vel.', release_date: '2023-08-22', providerId: '337' },
-                { id: 307, title: 'Percy Jackson', backdrop_path: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=1200', vote_average: 7.4, overview: 'O semideus moderno de 12 anos, Percy Jackson, Ã© acusado pelo deus grego Zeus de ter roubado seu raio mestre.', release_date: '2023-12-19', providerId: '337' },
-                { id: 308, title: 'Avatar: O Caminho da Ãgua', backdrop_path: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=1200', vote_average: 7.8, overview: 'Jake Sully vive em paz com sua nova famÃ­lia no planeta Pandora. Mas uma antiga ameaÃ§a ressurge, forÃ§ando-o a fazer alianÃ§as difÃ­ceis.', release_date: '2022-12-14', providerId: '337' },
-                { id: 309, title: 'Star Wars: The Bad Batch', backdrop_path: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&q=80&w=1200', vote_average: 8.2, overview: 'Os clones de elite e experimentais do Bad Batch encontram seu caminho em uma galÃ¡xia em rÃ¡pida mudanÃ§a logo apÃ³s as Guerras ClÃ´nicas.', release_date: '2021-05-04', providerId: '337' },
-                { id: 310, title: 'X-Men 97', backdrop_path: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=1200', vote_average: 8.8, overview: 'SequÃªncia direta da clÃ¡ssica sÃ©rie animada dos anos 90, acompanhando os mutantes sob a lideranÃ§a de Ciclope apÃ³s a partida do Professor X.', release_date: '2024-03-20', providerId: '337' },
-                { id: 311, title: 'Monstros no Trabalho', backdrop_path: 'https://images.unsplash.com/photo-1608889175123-8ec330b86f84?auto=format&fit=crop&q=80&w=1200', vote_average: 7.5, overview: 'Acompanha Tylor Tuskmon, um jovem mecÃ¢nico entusiasmado da Monstros S.A., que sonha em subir para o andar do riso.', release_date: '2021-07-07', providerId: '337' },
-                { id: 312, title: 'Andor', backdrop_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=1200', vote_average: 8.3, overview: 'A jornada de Cassian Andor para descobrir a diferenÃ§a que ele pode fazer na rebeliÃ£o emergente contra o ImpÃ©rio GalÃ¡ctico.', release_date: '2022-09-21', providerId: '337' }
+                { id: 301, title: 'The Mandalorian', backdrop_path: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&q=80&w=1200', vote_average: 8.9, overview: 'As viagens de um caçador de recompensas solitário nos confins da galáxia, longe da autoridade da Nova República.', release_date: '2019-11-12', providerId: '337' },
+                { id: 302, title: 'Loki', backdrop_path: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=1200', vote_average: 8.6, overview: 'O Deus da Trapaça sai da sombra de seu irmão em uma nova série que ocorre após os eventos de Vingadores: Ultimato.', release_date: '2021-06-09', providerId: '337' },
+                { id: 303, title: 'WandaVision', backdrop_path: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&q=80&w=1200', vote_average: 8.3, overview: 'Wanda Maximoff e Visão, dois seres superpoderosos, vivem a vida suburbana ideal, mas começam a suspeitar que nem tudo é o que parece.', release_date: '2021-01-15', providerId: '337' },
+                { id: 304, title: 'Zootopia 2', backdrop_path: 'https://images.unsplash.com/photo-1608889175123-8ec330b86f84?auto=format&fit=crop&q=80&w=1200', vote_average: 7.8, overview: 'Judy Hopps e Nick Wilde retornam para resolver um novo caso emocionante na metrópole cheia de animais.', release_date: '2025-03-01', providerId: '337' },
+                { id: 305, title: 'Divertidamente 2', backdrop_path: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=1200', vote_average: 8.4, overview: 'Riley agora é uma adolescente e sua mente passa por uma reforma para dar lugar a algo totalmente inesperado: novas emoções.', release_date: '2024-06-14', providerId: '337' },
+                { id: 306, title: 'Ahsoka', backdrop_path: 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&q=80&w=1200', vote_average: 7.7, overview: 'Ambientada após a queda do Império, a ex-cavaleira Jedi Ahsoka Tano investiga uma ameaça emergente a uma galáxia vulnerável.', release_date: '2023-08-22', providerId: '337' },
+                { id: 307, title: 'Percy Jackson', backdrop_path: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=1200', vote_average: 7.4, overview: 'O semideus moderno de 12 anos, Percy Jackson, é acusado pelo deus grego Zeus de ter roubado seu raio mestre.', release_date: '2023-12-19', providerId: '337' },
+                { id: 308, title: 'Avatar: O Caminho da Ãgua', backdrop_path: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=1200', vote_average: 7.8, overview: 'Jake Sully vive em paz com sua nova família no planeta Pandora. Mas uma antiga ameaça ressurge, forçando-o a fazer alianças difíceis.', release_date: '2022-12-14', providerId: '337' },
+                { id: 309, title: 'Star Wars: The Bad Batch', backdrop_path: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&q=80&w=1200', vote_average: 8.2, overview: 'Os clones de elite e experimentais do Bad Batch encontram seu caminho em uma galáxia em rápida mudança logo após as Guerras Clônicas.', release_date: '2021-05-04', providerId: '337' },
+                { id: 310, title: 'X-Men 97', backdrop_path: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=1200', vote_average: 8.8, overview: 'Sequência direta da clássica série animada dos anos 90, acompanhando os mutantes sob a liderança de Ciclope após a partida do Professor X.', release_date: '2024-03-20', providerId: '337' },
+                { id: 311, title: 'Monstros no Trabalho', backdrop_path: 'https://images.unsplash.com/photo-1608889175123-8ec330b86f84?auto=format&fit=crop&q=80&w=1200', vote_average: 7.5, overview: 'Acompanha Tylor Tuskmon, um jovem mecânico entusiasmado da Monstros S.A., que sonha em subir para o andar do riso.', release_date: '2021-07-07', providerId: '337' },
+                { id: 312, title: 'Andor', backdrop_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=1200', vote_average: 8.3, overview: 'A jornada de Cassian Andor para descobrir a diferença que ele pode fazer na rebelião emergente contra o Império Galáctico.', release_date: '2022-09-21', providerId: '337' }
             ],
             '307': [ // Globoplay
-                { id: 401, title: 'Sob PressÃ£o', backdrop_path: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&q=80&w=1200', vote_average: 8.6, overview: 'A rotina caÃ³tica da equipe de mÃ©dicos de um hospital pÃºblico no Rio de Janeiro, dividida entre os dilemas pessoais e a urgÃªncia dos pacientes.', release_date: '2017-07-04', providerId: '307' },
-                { id: 402, title: 'A DivisÃ£o', backdrop_path: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=1200', vote_average: 8.4, overview: 'No final dos anos 90, uma onda de sequestros aterroriza o Rio de Janeiro. Policiais incorruptÃ­veis unem forÃ§as para combater a criminalidade.', release_date: '2019-07-19', providerId: '307' },
-                { id: 403, title: 'Os Outros', backdrop_path: 'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?auto=format&fit=crop&q=80&w=1200', vote_average: 8.8, overview: 'A intolerÃ¢ncia entre vizinhos de um condomÃ­nio de classe mÃ©dia na Barra da Tijuca desencadeia uma sÃ©rie de consequÃªncias absurdas e perigosas.', release_date: '2023-05-31', providerId: '307' },
-                { id: 404, title: 'Rensga Hits!', backdrop_path: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=1200', vote_average: 7.9, overview: 'RaÃ­ssa sonha em viver de mÃºsica e se muda para GoiÃ¢nia, mas descobre que o caminho da fama no mundo sertanejo Ã© cheio de traiÃ§Ãµes e intrigas.', release_date: '2022-08-04', providerId: '307' },
-                { id: 405, title: 'Sintonia', backdrop_path: 'https://images.unsplash.com/photo-1535016120720-40c646be5580?auto=format&fit=crop&q=80&w=1200', vote_average: 8.2, overview: 'TrÃªs amigos da periferia de SÃ£o Paulo correm atrÃ¡s de seus sonhos, cercados por mÃºsica, religiÃ£o e o crime organizado.', release_date: '2019-08-09', providerId: '307' },
-                { id: 406, title: 'Xuxa, o DocumentÃ¡rio', backdrop_path: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=1200', vote_average: 7.6, overview: 'Uma imersÃ£o na trajetÃ³ria de Maria da GraÃ§a Xuxa Meneghel, revelando os bastidores de sua ascensÃ£o a Rainha dos Baixinhos.', release_date: '2023-07-13', providerId: '307' },
-                { id: 407, title: 'Avenida Brasil', backdrop_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=1200', vote_average: 9.0, overview: 'A saga de Rita, uma jovem obstinada que busca vinganÃ§a contra sua madrasta inescrupulosa, Carminha, que a abandonou no lixo na infÃ¢ncia.', release_date: '2012-03-26', providerId: '307' },
-                { id: 408, title: 'Rota 66', backdrop_path: 'https://images.unsplash.com/photo-1585647347483-22b66260dfff?auto=format&fit=crop&q=80&w=1200', vote_average: 8.1, overview: 'Baseado no livro de Caco Barcellos, acompanha a investigaÃ§Ã£o jornalÃ­stica sobre a violÃªncia desmedida da PM paulista.', release_date: '2022-09-22', providerId: '307' },
-                { id: 409, title: 'Arcanjo Renegado', backdrop_path: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=1200', vote_average: 8.3, overview: 'Mikhael Ã© o lÃ­der de uma equipe do BOPE no Rio de Janeiro que realiza missÃµes de alta periculosidade.', release_date: '2020-02-07', providerId: '307' },
-                { id: 410, title: 'As Aventuras de JosÃ© & Durval', backdrop_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1200', vote_average: 8.0, overview: 'A sÃ©rie biogrÃ¡fica inspirada na vida e canÃ§Ãµes da dupla sertaneja ChitÃ£ozinho & XororÃ³.', release_date: '2023-08-18', providerId: '307' },
-                { id: 411, title: 'Vale Tudo', backdrop_path: 'https://images.unsplash.com/photo-1512428559087-560fa5ceab42?auto=format&fit=crop&q=80&w=1200', vote_average: 9.1, overview: 'ClÃ¡ssico absoluto da teledramaturgia que discute os limites da honestidade no Brasil atravÃ©s do embate entre Raquel e sua filha Maria de FÃ¡tima.', release_date: '1988-05-16', providerId: '307' },
-                { id: 412, title: 'JustiÃ§a 2', backdrop_path: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=80&w=1200', vote_average: 8.6, overview: 'Quatro histÃ³rias independentes que se cruzam na busca por reparaÃ§Ã£o e integridade apÃ³s passarem anos em reclusÃ£o.', release_date: '2024-04-11', providerId: '307' }
+                { id: 401, title: 'Sob Pressão', backdrop_path: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&q=80&w=1200', vote_average: 8.6, overview: 'A rotina caótica da equipe de médicos de um hospital público no Rio de Janeiro, dividida entre os dilemas pessoais e a urgência dos pacientes.', release_date: '2017-07-04', providerId: '307' },
+                { id: 402, title: 'A Divisão', backdrop_path: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=1200', vote_average: 8.4, overview: 'No final dos anos 90, uma onda de sequestros aterroriza o Rio de Janeiro. Policiais incorruptíveis unem forças para combater a criminalidade.', release_date: '2019-07-19', providerId: '307' },
+                { id: 403, title: 'Os Outros', backdrop_path: 'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?auto=format&fit=crop&q=80&w=1200', vote_average: 8.8, overview: 'A intolerância entre vizinhos de um condomínio de classe média na Barra da Tijuca desencadeia uma série de consequências absurdas e perigosas.', release_date: '2023-05-31', providerId: '307' },
+                { id: 404, title: 'Rensga Hits!', backdrop_path: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=1200', vote_average: 7.9, overview: 'Raíssa sonha em viver de música e se muda para Goiânia, mas descobre que o caminho da fama no mundo sertanejo é cheio de traições e intrigas.', release_date: '2022-08-04', providerId: '307' },
+                { id: 405, title: 'Sintonia', backdrop_path: 'https://images.unsplash.com/photo-1535016120720-40c646be5580?auto=format&fit=crop&q=80&w=1200', vote_average: 8.2, overview: 'Três amigos da periferia de São Paulo correm atrás de seus sonhos, cercados por música, religião e o crime organizado.', release_date: '2019-08-09', providerId: '307' },
+                { id: 406, title: 'Xuxa, o Documentário', backdrop_path: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=1200', vote_average: 7.6, overview: 'Uma imersão na trajetória de Maria da Graça Xuxa Meneghel, revelando os bastidores de sua ascensão a Rainha dos Baixinhos.', release_date: '2023-07-13', providerId: '307' },
+                { id: 407, title: 'Avenida Brasil', backdrop_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=1200', vote_average: 9.0, overview: 'A saga de Rita, uma jovem obstinada que busca vingança contra sua madrasta inescrupulosa, Carminha, que a abandonou no lixo na infância.', release_date: '2012-03-26', providerId: '307' },
+                { id: 408, title: 'Rota 66', backdrop_path: 'https://images.unsplash.com/photo-1585647347483-22b66260dfff?auto=format&fit=crop&q=80&w=1200', vote_average: 8.1, overview: 'Baseado no livro de Caco Barcellos, acompanha a investigação jornalística sobre a violência desmedida da PM paulista.', release_date: '2022-09-22', providerId: '307' },
+                { id: 409, title: 'Arcanjo Renegado', backdrop_path: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=1200', vote_average: 8.3, overview: 'Mikhael é o líder de uma equipe do BOPE no Rio de Janeiro que realiza missões de alta periculosidade.', release_date: '2020-02-07', providerId: '307' },
+                { id: 410, title: 'As Aventuras de José & Durval', backdrop_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1200', vote_average: 8.0, overview: 'A série biográfica inspirada na vida e canções da dupla sertaneja Chitãozinho & Xororó.', release_date: '2023-08-18', providerId: '307' },
+                { id: 411, title: 'Vale Tudo', backdrop_path: 'https://images.unsplash.com/photo-1512428559087-560fa5ceab42?auto=format&fit=crop&q=80&w=1200', vote_average: 9.1, overview: 'Clássico absoluto da teledramaturgia que discute os limites da honestidade no Brasil através do embate entre Raquel e sua filha Maria de Fátima.', release_date: '1988-05-16', providerId: '307' },
+                { id: 412, title: 'Justiça 2', backdrop_path: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=80&w=1200', vote_average: 8.6, overview: 'Quatro histórias independentes que se cruzam na busca por reparação e integridade após passarem anos em reclusão.', release_date: '2024-04-11', providerId: '307' }
             ],
             '1899': [ // Max
-                { id: 501, title: 'Game of Thrones', backdrop_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=1200', vote_average: 9.2, overview: 'Em uma terra onde os verÃµes duram dÃ©cadas e os invernos uma eternidade, nobres famÃ­lias travam uma guerra pelo Trono de Ferro.', release_date: '2011-04-17', providerId: '1899' },
-                { id: 502, title: 'The Last of Us', backdrop_path: 'https://images.unsplash.com/photo-1618336753974-aae8e04506aa?auto=format&fit=crop&q=80&w=1200', vote_average: 8.9, overview: 'Vinte anos apÃ³s a destruiÃ§Ã£o da civilizaÃ§Ã£o moderna, Joel Ã© contratado para contrabandear Ellie, uma jovem de 14 anos, para fora de uma zona de quarentena opressiva.', release_date: '2023-01-15', providerId: '1899' },
-                { id: 503, title: 'Succession', backdrop_path: 'https://images.unsplash.com/photo-1512428559087-560fa5ceab42?auto=format&fit=crop&q=80&w=1200', vote_average: 9.0, overview: 'A disputa pelo poder em uma das maiores corporaÃ§Ãµes de mÃ­dia do mundo, travada entre o patriarca idoso Logan Roy e seus filhos ambiciosos.', release_date: '2018-06-03', providerId: '1899' },
-                { id: 504, title: 'Euphoria', backdrop_path: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=80&w=1200', vote_average: 8.4, overview: 'Um grupo de estudantes do ensino mÃ©dio navega por amor e amizades em um mundo de drogas, sexo, traumas e mÃ­dias sociais.', release_date: '2019-06-16', providerId: '1899' },
-                { id: 505, title: 'A Casa do DragÃ£o', backdrop_path: 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&q=80&w=1200', vote_average: 8.5, overview: 'A histÃ³ria da famÃ­lia Targaryen no auge do seu poder em Westeros, trezentos anos antes dos eventos de Game of Thrones.', release_date: '2022-08-21', providerId: '1899' },
-                { id: 506, title: 'Chernobyl', backdrop_path: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=1200', vote_average: 9.4, overview: 'A dramatizaÃ§Ã£o da terrÃ­vel histÃ³ria real do acidente nuclear de 1986 na UcrÃ¢nia, revelando as mentiras do governo e o heroÃ­smo dos civis.', release_date: '2019-05-06', providerId: '1899' },
-                { id: 507, title: 'Batman: O Cavaleiro das Trevas', backdrop_path: 'https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?auto=format&fit=crop&q=80&w=1200', vote_average: 9.0, overview: 'Com a ajuda do tenente Jim Gordon e do promotor Harvey Dent, Batman tenta desmantelar as organizaÃ§Ãµes criminosas de Gotham, mas se depara com o caos do Coringa.', release_date: '2008-07-16', providerId: '1899' },
-                { id: 508, title: 'True Detective', backdrop_path: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=1200', vote_average: 8.9, overview: 'SÃ©rie policial antolÃ³gica de mistÃ©rios onde investigadores obstinados enfrentam seus prÃ³prios demÃ´nios para resolver crimes perturbadores.', release_date: '2014-01-12', providerId: '1899' },
-                { id: 509, title: 'Pequenas Grandes Mentiras', backdrop_path: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=1200', vote_average: 8.6, overview: 'A vida aparentemente perfeita de trÃªs mÃ£es de alunos da escola primÃ¡ria comeÃ§a a se desintegrar atÃ© chegar ao ponto de um assassinato misterioso.', release_date: '2017-02-19', providerId: '1899' },
-                { id: 510, title: 'The Sopranos', backdrop_path: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=1200', vote_average: 9.2, overview: 'Um chefe da mÃ¡fia de Nova Jersey lida com problemas pessoais e profissionais que o levam a buscar terapia psiquiÃ¡trica em segredo.', release_date: '1999-01-10', providerId: '1899' },
-                { id: 511, title: 'Interestelar', backdrop_path: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1200', vote_average: 8.7, overview: 'Um grupo de astronautas viaja atravÃ©s de um buraco de minhoca em busca de um novo lar viÃ¡vel para a humanidade ameaÃ§ada de extinÃ§Ã£o.', release_date: '2014-11-05', providerId: '1899' },
-                { id: 512, title: 'Roma', backdrop_path: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=1200', vote_average: 8.5, overview: 'SÃ©rie de Ã©poca ultra detalhada que acompanha o cotidiano de generais, senadores e soldados plebeus durante a ascensÃ£o do ImpÃ©rio Romano.', release_date: '2005-08-28', providerId: '1899' }
+                { id: 501, title: 'Game of Thrones', backdrop_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=1200', vote_average: 9.2, overview: 'Em uma terra onde os verões duram décadas e os invernos uma eternidade, nobres famílias travam uma guerra pelo Trono de Ferro.', release_date: '2011-04-17', providerId: '1899' },
+                { id: 502, title: 'The Last of Us', backdrop_path: 'https://images.unsplash.com/photo-1618336753974-aae8e04506aa?auto=format&fit=crop&q=80&w=1200', vote_average: 8.9, overview: 'Vinte anos após a destruição da civilização moderna, Joel é contratado para contrabandear Ellie, uma jovem de 14 anos, para fora de uma zona de quarentena opressiva.', release_date: '2023-01-15', providerId: '1899' },
+                { id: 503, title: 'Succession', backdrop_path: 'https://images.unsplash.com/photo-1512428559087-560fa5ceab42?auto=format&fit=crop&q=80&w=1200', vote_average: 9.0, overview: 'A disputa pelo poder em uma das maiores corporações de mídia do mundo, travada entre o patriarca idoso Logan Roy e seus filhos ambiciosos.', release_date: '2018-06-03', providerId: '1899' },
+                { id: 504, title: 'Euphoria', backdrop_path: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=80&w=1200', vote_average: 8.4, overview: 'Um grupo de estudantes do ensino médio navega por amor e amizades em um mundo de drogas, sexo, traumas e mídias sociais.', release_date: '2019-06-16', providerId: '1899' },
+                { id: 505, title: 'A Casa do Dragão', backdrop_path: 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&q=80&w=1200', vote_average: 8.5, overview: 'A história da família Targaryen no auge do seu poder em Westeros, trezentos anos antes dos eventos de Game of Thrones.', release_date: '2022-08-21', providerId: '1899' },
+                { id: 506, title: 'Chernobyl', backdrop_path: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=1200', vote_average: 9.4, overview: 'A dramatização da terrível história real do acidente nuclear de 1986 na Ucrânia, revelando as mentiras do governo e o heroísmo dos civis.', release_date: '2019-05-06', providerId: '1899' },
+                { id: 507, title: 'Batman: O Cavaleiro das Trevas', backdrop_path: 'https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?auto=format&fit=crop&q=80&w=1200', vote_average: 9.0, overview: 'Com a ajuda do tenente Jim Gordon e do promotor Harvey Dent, Batman tenta desmantelar as organizações criminosas de Gotham, mas se depara com o caos do Coringa.', release_date: '2008-07-16', providerId: '1899' },
+                { id: 508, title: 'True Detective', backdrop_path: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=1200', vote_average: 8.9, overview: 'Série policial antológica de mistérios onde investigadores obstinados enfrentam seus próprios demônios para resolver crimes perturbadores.', release_date: '2014-01-12', providerId: '1899' },
+                { id: 509, title: 'Pequenas Grandes Mentiras', backdrop_path: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=1200', vote_average: 8.6, overview: 'A vida aparentemente perfeita de três mães de alunos da escola primária começa a se desintegrar até chegar ao ponto de um assassinato misterioso.', release_date: '2017-02-19', providerId: '1899' },
+                { id: 510, title: 'The Sopranos', backdrop_path: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=1200', vote_average: 9.2, overview: 'Um chefe da máfia de Nova Jersey lida com problemas pessoais e profissionais que o levam a buscar terapia psiquiátrica em segredo.', release_date: '1999-01-10', providerId: '1899' },
+                { id: 511, title: 'Interestelar', backdrop_path: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1200', vote_average: 8.7, overview: 'Um grupo de astronautas viaja através de um buraco de minhoca em busca de um novo lar viável para a humanidade ameaçada de extinção.', release_date: '2014-11-05', providerId: '1899' },
+                { id: 512, title: 'Roma', backdrop_path: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=1200', vote_average: 8.5, overview: 'Série de época ultra detalhada que acompanha o cotidiano de generais, senadores e soldados plebeus durante a ascensão do Império Romano.', release_date: '2005-08-28', providerId: '1899' }
             ],
             '531': [ // Paramount+
-                { id: 601, title: 'Halo', backdrop_path: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=1200', vote_average: 8.3, overview: 'Uma aventura espacial Ã©pica onde guerreiros espartanos geneticamente modificados defendem a humanidade da alianÃ§a alienÃ­gena Covenant.', release_date: '2022-03-24', providerId: '531' },
-                { id: 602, title: 'Yellowstone', backdrop_path: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&q=80&w=1200', vote_average: 8.7, overview: 'A saga da famÃ­lia Dutton, proprietÃ¡ria do maior rancho contÃ­guo dos EUA, sob constante ataque de incorporadores, reservas e parques.', release_date: '2018-06-20', providerId: '531' },
-                { id: 603, title: 'Tulsa King', backdrop_path: 'https://images.unsplash.com/photo-1535016120720-40c646be5580?auto=format&fit=crop&q=80&w=1200', vote_average: 8.2, overview: 'Um ex-capo da mÃ¡fia italiana Ã© libertado apÃ³s 25 anos de prisÃ£o e exilado para fundar um novo impÃ©rio criminoso em Tulsa.', release_date: '2022-11-13', providerId: '531' },
-                { id: 604, title: '1883', backdrop_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1200', vote_average: 8.6, overview: 'O prelÃºdio de Yellowstone acompanha a jornada Ã©pica da famÃ­lia Dutton pelo oeste selvagem americano rumo a Montana.', release_date: '2021-12-19', providerId: '531' },
+                { id: 601, title: 'Halo', backdrop_path: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=1200', vote_average: 8.3, overview: 'Uma aventura espacial épica onde guerreiros espartanos geneticamente modificados defendem a humanidade da aliança alienígena Covenant.', release_date: '2022-03-24', providerId: '531' },
+                { id: 602, title: 'Yellowstone', backdrop_path: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&q=80&w=1200', vote_average: 8.7, overview: 'A saga da família Dutton, proprietária do maior rancho contíguo dos EUA, sob constante ataque de incorporadores, reservas e parques.', release_date: '2018-06-20', providerId: '531' },
+                { id: 603, title: 'Tulsa King', backdrop_path: 'https://images.unsplash.com/photo-1535016120720-40c646be5580?auto=format&fit=crop&q=80&w=1200', vote_average: 8.2, overview: 'Um ex-capo da máfia italiana é libertado após 25 anos de prisão e exilado para fundar um novo império criminoso em Tulsa.', release_date: '2022-11-13', providerId: '531' },
+                { id: 604, title: '1883', backdrop_path: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1200', vote_average: 8.6, overview: 'O prelúdio de Yellowstone acompanha a jornada épica da família Dutton pelo oeste selvagem americano rumo a Montana.', release_date: '2021-12-19', providerId: '531' },
                 { id: 605, title: 'South Park', backdrop_path: 'https://images.unsplash.com/photo-1608889175123-8ec330b86f84?auto=format&fit=crop&q=80&w=1200', vote_average: 8.7, overview: 'As aventuras bizarras de quatro garotos desbocados na pacata e estranha cidade de South Park, no Colorado.', release_date: '1997-08-13', providerId: '531' },
-                { id: 606, title: 'Mayor of Kingstown', backdrop_path: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=1200', vote_average: 8.2, overview: 'A famÃ­lia McLusky atua como mediadora de poder e paz em Kingstown, Michigan, onde a Ãºnica indÃºstria lucrativa sÃ£o as prisÃµes federais.', release_date: '2021-11-14', providerId: '531' },
-                { id: 607, title: 'Top Gun: Maverick', backdrop_path: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=1200', vote_average: 8.3, overview: 'ApÃ³s trinta anos de serviÃ§o, o piloto Maverick retorna Ã  academia de elite Top Gun para treinar uma equipe para uma missÃ£o quase impossÃ­vel.', release_date: '2022-05-24', providerId: '531' },
-                { id: 608, title: 'OperaÃ§Ã£o Lioness', backdrop_path: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=1200', vote_average: 8.0, overview: 'Uma agente da CIA tenta equilibrar sua vida pessoal conturbada enquanto trabalha infiltrada com a filha de um terrorista bilionÃ¡rio.', release_date: '2023-07-23', providerId: '531' },
-                { id: 609, title: 'Frasier', backdrop_path: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=1200', vote_average: 8.1, overview: 'A vida e atribulaÃ§Ãµes hilÃ¡rias do psiquiatra Frasier Crane ao retornar para Seattle, onde divide o apartamento com seu pai idoso e ex-policial.', release_date: '1993-09-16', providerId: '531' },
-                { id: 610, title: 'Dexter', backdrop_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=1200', vote_average: 8.7, overview: 'A jornada de Dexter Morgan, analista forense especialista em dispersÃ£o de sangue que leva uma vida dupla como serial killer que caÃ§a bandidos.', release_date: '2006-10-01', providerId: '531' },
-                { id: 611, title: 'Yellowjackets', backdrop_path: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=80&w=1200', vote_average: 7.9, overview: 'A saga de um time escolar de futebol feminino que sobrevive a uma queda de aviÃ£o no interior de uma floresta remota em 1996.', release_date: '2021-11-14', providerId: '531' },
-                { id: 612, title: 'Californication', backdrop_path: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=1200', vote_average: 8.0, overview: 'Um romancista em crise criativa se muda para Los Angeles onde lida com seu bloqueio criativo, filhas rebeldes e relacionamentos volÃ¡teis.', release_date: '2007-08-13', providerId: '531' }
+                { id: 606, title: 'Mayor of Kingstown', backdrop_path: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=1200', vote_average: 8.2, overview: 'A família McLusky atua como mediadora de poder e paz em Kingstown, Michigan, onde a única indústria lucrativa são as prisões federais.', release_date: '2021-11-14', providerId: '531' },
+                { id: 607, title: 'Top Gun: Maverick', backdrop_path: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=1200', vote_average: 8.3, overview: 'Após trinta anos de serviço, o piloto Maverick retorna Ã  academia de elite Top Gun para treinar uma equipe para uma missão quase impossível.', release_date: '2022-05-24', providerId: '531' },
+                { id: 608, title: 'Operação Lioness', backdrop_path: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=1200', vote_average: 8.0, overview: 'Uma agente da CIA tenta equilibrar sua vida pessoal conturbada enquanto trabalha infiltrada com a filha de um terrorista bilionário.', release_date: '2023-07-23', providerId: '531' },
+                { id: 609, title: 'Frasier', backdrop_path: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=1200', vote_average: 8.1, overview: 'A vida e atribulações hilárias do psiquiatra Frasier Crane ao retornar para Seattle, onde divide o apartamento com seu pai idoso e ex-policial.', release_date: '1993-09-16', providerId: '531' },
+                { id: 610, title: 'Dexter', backdrop_path: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&q=80&w=1200', vote_average: 8.7, overview: 'A jornada de Dexter Morgan, analista forense especialista em dispersão de sangue que leva uma vida dupla como serial killer que caça bandidos.', release_date: '2006-10-01', providerId: '531' },
+                { id: 611, title: 'Yellowjackets', backdrop_path: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=80&w=1200', vote_average: 7.9, overview: 'A saga de um time escolar de futebol feminino que sobrevive a uma queda de avião no interior de uma floresta remota em 1996.', release_date: '2021-11-14', providerId: '531' },
+                { id: 612, title: 'Californication', backdrop_path: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=1200', vote_average: 8.0, overview: 'Um romancista em crise criativa se muda para Los Angeles onde lida com seu bloqueio criativo, filhas rebeldes e relacionamentos voláteis.', release_date: '2007-08-13', providerId: '531' }
             ],
             '350': [ // Apple TV+
-                { id: 701, title: 'Ted Lasso', backdrop_path: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&q=80&w=1200', vote_average: 8.9, overview: 'Um treinador de futebol americano Ã© contratado para comandar um time de futebol profissional na Inglaterra, apesar de nÃ£o ter experiÃªncia no esporte.', release_date: '2020-08-14', providerId: '350' },
-                { id: 702, title: 'Ruptura', backdrop_path: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=1200', vote_average: 8.7, overview: 'FuncionÃ¡rios de uma misteriosa empresa passam por um procedimento cirÃºrgico que separa cirurgicamente suas memÃ³rias pessoais das profissionais.', release_date: '2022-02-18', providerId: '350' },
-                { id: 703, title: 'Silo', backdrop_path: 'https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&q=80&w=1200', vote_average: 8.3, overview: 'Em um futuro tÃ³xico e arruinado, uma comunidade inteira vive em um silo subterrÃ¢neo gigante que se estende por centenas de andares abaixo da terra.', release_date: '2023-05-05', providerId: '350' },
-                { id: 704, title: 'The Morning Show', backdrop_path: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=1200', vote_average: 8.2, overview: 'Uma anÃ¡lise honesta dos bastidores de um noticiÃ¡rio matinal de TV de muito sucesso, apÃ³s a demissÃ£o de um dos Ã¢ncoras por acusaÃ§Ãµes de conduta sexual imprÃ³pria.', release_date: '2019-11-01', providerId: '350' },
-                { id: 705, title: 'FundaÃ§Ã£o', backdrop_path: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1200', vote_average: 8.1, overview: 'Baseado na saga literÃ¡ria de Isaac Asimov, acompanha um grupo de exilados na tentativa Ã©pica de reconstruir a civilizaÃ§Ã£o galÃ¡ctica.', release_date: '2021-09-24', providerId: '350' },
+                { id: 701, title: 'Ted Lasso', backdrop_path: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&q=80&w=1200', vote_average: 8.9, overview: 'Um treinador de futebol americano é contratado para comandar um time de futebol profissional na Inglaterra, apesar de não ter experiência no esporte.', release_date: '2020-08-14', providerId: '350' },
+                { id: 702, title: 'Ruptura', backdrop_path: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=1200', vote_average: 8.7, overview: 'Funcionários de uma misteriosa empresa passam por um procedimento cirúrgico que separa cirurgicamente suas memórias pessoais das profissionais.', release_date: '2022-02-18', providerId: '350' },
+                { id: 703, title: 'Silo', backdrop_path: 'https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&q=80&w=1200', vote_average: 8.3, overview: 'Em um futuro tóxico e arruinado, uma comunidade inteira vive em um silo subterrâneo gigante que se estende por centenas de andares abaixo da terra.', release_date: '2023-05-05', providerId: '350' },
+                { id: 704, title: 'The Morning Show', backdrop_path: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=1200', vote_average: 8.2, overview: 'Uma análise honesta dos bastidores de um noticiário matinal de TV de muito sucesso, após a demissão de um dos âncoras por acusações de conduta sexual imprópria.', release_date: '2019-11-01', providerId: '350' },
+                { id: 705, title: 'Fundação', backdrop_path: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1200', vote_average: 8.1, overview: 'Baseado na saga literária de Isaac Asimov, acompanha um grupo de exilados na tentativa épica de reconstruir a civilização galáctica.', release_date: '2021-09-24', providerId: '350' },
                 { id: 706, title: 'Sequestro no Ar', backdrop_path: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&q=80&w=1200', vote_average: 7.7, overview: 'Um experiente negociador corporativo tenta usar suas habilidades profissionais para desarmar e salvar passageiros de um voo sequestrado.', release_date: '2023-06-28', providerId: '350' },
-                { id: 707, title: 'For All Mankind', backdrop_path: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1200', vote_average: 8.4, overview: 'Numa realidade alternativa da corrida espacial, a UniÃ£o SoviÃ©tica pousa na Lua antes dos Estados Unidos, abalando a NASA.', release_date: '2019-11-01', providerId: '350' },
-                { id: 708, title: 'Assassinos da Lua das Flores', backdrop_path: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=1200', vote_average: 8.0, overview: 'No inÃ­cio do sÃ©culo XX, membros da tribo indÃ­gena Osage em Oklahoma sÃ£o assassinados misteriosamente apÃ³s a descoberta de petrÃ³leo em suas terras.', release_date: '2023-10-18', providerId: '350' },
-                { id: 709, title: 'Servant', backdrop_path: 'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?auto=format&fit=crop&q=80&w=1200', vote_average: 7.6, overview: 'Um casal da FiladÃ©lfia contrata uma jovem babÃ¡ para cuidar de um boneco terapÃªutico realista usado apÃ³s a perda de seu bebÃª de trÃªs meses.', release_date: '2019-11-28', providerId: '350' },
-                { id: 710, title: 'Slow Horses', backdrop_path: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=1200', vote_average: 8.1, overview: 'Um drama de espionagem cheio de humor negro sobre um departamento de agentes renegados do MI5 mandados ao exÃ­lio burocrÃ¡tico na Slough House.', release_date: '2022-04-01', providerId: '350' },
-                { id: 711, title: 'MatÃ©ria Escura', backdrop_path: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=1200', vote_average: 8.2, overview: 'Um fÃ­sico Ã© sequestrado em uma versÃ£o alternativa de sua vida e precisa lutar para retornar Ã  sua famÃ­lia verdadeira em meio ao multiverso.', release_date: '2024-05-08', providerId: '350' },
-                { id: 712, title: 'Preacher', backdrop_path: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&q=80&w=1200', vote_average: 7.9, overview: 'ApÃ³s um acontecimento misterioso na sua capela, um pastor do Texas com um passado sombrio recebe um poder sobrenatural inusitado.', release_date: '2016-05-22', providerId: '350' }
+                { id: 707, title: 'For All Mankind', backdrop_path: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1200', vote_average: 8.4, overview: 'Numa realidade alternativa da corrida espacial, a União Soviética pousa na Lua antes dos Estados Unidos, abalando a NASA.', release_date: '2019-11-01', providerId: '350' },
+                { id: 708, title: 'Assassinos da Lua das Flores', backdrop_path: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=1200', vote_average: 8.0, overview: 'No início do século XX, membros da tribo indígena Osage em Oklahoma são assassinados misteriosamente após a descoberta de petróleo em suas terras.', release_date: '2023-10-18', providerId: '350' },
+                { id: 709, title: 'Servant', backdrop_path: 'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?auto=format&fit=crop&q=80&w=1200', vote_average: 7.6, overview: 'Um casal da Filadélfia contrata uma jovem babá para cuidar de um boneco terapêutico realista usado após a perda de seu bebê de três meses.', release_date: '2019-11-28', providerId: '350' },
+                { id: 710, title: 'Slow Horses', backdrop_path: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=1200', vote_average: 8.1, overview: 'Um drama de espionagem cheio de humor negro sobre um departamento de agentes renegados do MI5 mandados ao exílio burocrático na Slough House.', release_date: '2022-04-01', providerId: '350' },
+                { id: 711, title: 'Matéria Escura', backdrop_path: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=1200', vote_average: 8.2, overview: 'Um físico é sequestrado em uma versão alternativa de sua vida e precisa lutar para retornar Ã  sua família verdadeira em meio ao multiverso.', release_date: '2024-05-08', providerId: '350' },
+                { id: 712, title: 'Preacher', backdrop_path: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&q=80&w=1200', vote_average: 7.9, overview: 'Após um acontecimento misterioso na sua capela, um pastor do Texas com um passado sombrio recebe um poder sobrenatural inusitado.', release_date: '2016-05-22', providerId: '350' }
             ]
         };
 
@@ -612,7 +621,7 @@
                 const saved = localStorage.getItem('ap_users');
                 if (saved) return JSON.parse(saved);
                 return [
-                    { id: 'allmeiids@gmail.com', name: 'Almeida (Admin)', email: 'allmeiids@gmail.com', password: 'Mudar@123', role: 'admin', active: true, platforms: ['8', '119', '337', '307', '1899', '531', '350'], avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150', isFirstLogin: false },
+                    { id: 'allmeiids@gmail.com', name: 'Almeida (Admin)', email: 'allmeiids@gmail.com', password: 'Mudar@123', role: 'admin', active: true, platforms: ['8', '119', '337', '307', '1899', '531', '350'], avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150', isFirstLogin: true },
                     { id: 'pedro@gmail.com', name: 'Pedro', email: 'pedro@gmail.com', password: '123', role: 'user', active: true, platforms: ['119'], avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=150', isFirstLogin: true },
                     { id: 'rafael@gmail.com', name: 'Rafael', email: 'rafael@gmail.com', password: '123', role: 'user', active: true, platforms: ['337', '307'], avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150', isFirstLogin: true }
                 ];
@@ -729,7 +738,25 @@
                 [...loginMarqueeMovies.slice(24, 40), ...loginMarqueeMovies.slice(24, 40)]
             ];
 
-            // --- SYNCS ---
+            // --- SYNCS ---            useEffect(() => {
+                const loadData = async () => {
+                    if (window.supabase) {
+                        try {
+                            const dbPlatforms = await window.supabase.getPlatforms();
+                            if (dbPlatforms && dbPlatforms.length > 0) {
+                                setPlatforms(dbPlatforms);
+                            }
+                            const dbUsers = await window.supabase.getAllUsers();
+                            if (dbUsers && dbUsers.length > 0) {
+                                setUsers(dbUsers);
+                            }
+                        } catch(e) {
+                            console.error('Supabase load error', e);
+                        }
+                    }
+                };
+                loadData();
+            }, []);
             useEffect(() => {
                 localStorage.setItem('ap_users', JSON.stringify(users));
             }, [users]);
@@ -1003,7 +1030,7 @@
 
                 const found = users.find(u => u.email.toLowerCase() === loginEmail.toLowerCase().trim());
                 if (!found) {
-                    setLoginError('UsuÃ¡rio nÃ£o encontrado. Verifique seu e-mail.');
+                    setLoginError('Usuário não encontrado. Verifique seu e-mail.');
                     return;
                 }
 
@@ -1015,7 +1042,7 @@
                 setCurrentUser(found);
                 if (found.role === 'admin') {
                     setCurrentRoute('admin');
-                    showToast('OlÃ¡ Almeida, painel administrativo desbloqueado!', 'success');
+                    showToast('Olá Almeida, painel administrativo desbloqueado!', 'success');
                 } else {
                     setCurrentRoute('hub');
                     showToast(`Bem-vindo de volta, ${found.name}!`, 'success');
@@ -1024,25 +1051,44 @@
 
             const getMovieProvider = (movie) => {
                 if (!movie) return null;
+                
+                // Se um streaming específico está selecionado (não é 'all'), retorna APENAS esse
+                if (activePlatformId !== 'all' && activePlatformId) {
+                    const selectedPlatform = platforms.find(p => p.id === activePlatformId);
+                    if (selectedPlatform && selectedPlatform.enabled) {
+                        return selectedPlatform;
+                    }
+                }
+                
+                // Verificar se tem providerId específico
                 if (movie.providerId) {
                     const p = platforms.find(x => x.id === movie.providerId);
                     if (p) return p;
                 }
+                
+                // Verificar em FALLBACK_MOVIES
                 for (const [providerId, list] of Object.entries(FALLBACK_MOVIES)) {
                     if (list.some(m => m.id === movie.id || m.title === movie.title)) {
                         const p = platforms.find(x => x.id === providerId);
-                        if (p) return p;
+                        if (p && (activePlatformId === 'all' || p.id === activePlatformId)) {
+                            return p;
+                        }
                     }
                 }
-                const permittedPlatforms = currentUser
-                    ? (currentUser.role === 'admin'
-                        ? platforms.filter(p => p.enabled)
-                        : platforms.filter(p => p.enabled && currentUser.platforms.includes(p.id)))
-                    : [];
-                if (permittedPlatforms.length > 0) {
-                    const index = Math.abs(movie.id) % permittedPlatforms.length;
-                    return permittedPlatforms[index];
+                
+                // Fallback: Se 'Todos os canais' está selecionado, distribui aleatoriamente
+                if (activePlatformId === 'all') {
+                    const permittedPlatforms = currentUser
+                        ? (currentUser.role === 'admin'
+                            ? platforms.filter(p => p.enabled)
+                            : platforms.filter(p => p.enabled && currentUser.platforms.includes(p.id)))
+                        : [];
+                    if (permittedPlatforms.length > 0) {
+                        const index = Math.abs(movie.id) % permittedPlatforms.length;
+                        return permittedPlatforms[index];
+                    }
                 }
+                
                 return null;
             };
 
@@ -1066,18 +1112,18 @@
                     }));
                 }, 50);
 
-                showToast('PermissÃµes do usuÃ¡rio atualizadas!', 'success');
+                showToast('Permissões do usuário atualizadas!', 'success');
             };
 
             const handleAddUser = (e) => {
                 e.preventDefault();
                 if (!newUserName || !newUserEmail || !newUserPassword) {
-                    showToast('Preencha todos os campos do usuÃ¡rio.', 'error');
+                    showToast('Preencha todos os campos do usuário.', 'error');
                     return;
                 }
 
                 if (users.some(u => u.email.toLowerCase() === newUserEmail.toLowerCase().trim())) {
-                    showToast('Este e-mail jÃ¡ estÃ¡ cadastrado.', 'error');
+                    showToast('Este e-mail já está cadastrado.', 'error');
                     return;
                 }
 
@@ -1102,12 +1148,12 @@
 
             const handleDeleteUser = (userId) => {
                 if (userId === 'allmeiids@gmail.com') {
-                    showToast('VocÃª nÃ£o pode deletar a conta Admin.', 'error');
+                    showToast('Você não pode deletar a conta Admin.', 'error');
                     return;
                 }
-                if (confirm('Deseja realmente remover este usuÃ¡rio?')) {
+                if (confirm('Deseja realmente remover este usuário?')) {
                     setUsers(prev => prev.filter(u => u.id !== userId));
-                    showToast('UsuÃ¡rio removido.', 'success');
+                    showToast('Usuário removido.', 'success');
                 }
             };
 
@@ -1119,7 +1165,7 @@
                 }
 
                 if (platforms.some(p => p.id === newPlatformTMDbId)) {
-                    showToast('Este provedor jÃ¡ estÃ¡ cadastrado.', 'error');
+                    showToast('Este provedor já está cadastrado.', 'error');
                     return;
                 }
 
@@ -1321,30 +1367,9 @@
                     {/* ======================================================== */}
                     {currentRoute === 'login' && (
                         <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center bg-[#05070d]">
-                            <div className="absolute inset-0 z-0 overflow-hidden">
-                                <div className="absolute inset-[-12%] -rotate-3 opacity-70 blur-[1px] catalog-fade-mask flex flex-col gap-5 justify-center">
-                                    {loginMarqueeRows.map((row, rowIdx) => (
-                                        <div key={rowIdx} className="login-poster-strip">
-                                            <div
-                                                className={rowIdx % 2 === 0 ? 'animate-marquee-left' : 'animate-marquee-right'}
-                                                style={{ animationDuration: `${58 + rowIdx * 10}s` }}
-                                            >
-                                                {row.map((movie, idx) => (
-                                                    <div key={`${movie.id}-${rowIdx}-${idx}`} className="w-28 sm:w-32 md:w-36 aspect-[2/3] rounded-xl overflow-hidden border border-white/10 poster-card shrink-0">
-                                                        <img
-                                                            src={movie.poster_path || movie.backdrop_path}
-                                                            alt={movie.title}
-                                                            loading="lazy"
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
-                                <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,7,13,0.94),rgba(5,7,13,0.66),rgba(5,7,13,0.94))]" />
+                            <div className="absolute inset-0 z-0">
+                                <div className="absolute inset-0 bg-gradient-to-r from-brandDark via-brandDark/95 to-brandDark" />
+                                <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(59,130,246,0.05),rgba(139,92,246,0.03))]" />
                             </div>
 
                             {/* LEFT SIDE: Clean dark card for Login */}
@@ -1357,10 +1382,10 @@
                                     {/* App Branding (Only ONE Logo, CSS Styled) */}
                                     <div className="flex flex-col items-center mb-8 select-none">
                                         <div className="flex items-center gap-1 font-sans text-4xl font-extrabold tracking-tight mb-2 drop-shadow-[0_0_15px_rgba(59,130,246,0.3)]">
-                                            <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 bg-clip-text text-transparent font-black">
+                                            <span style={{ color: 'var(--logo-text-color)' }} className="font-black">
                                                 ALMEIDA
                                             </span>
-                                            <span className="text-brandAccent drop-shadow-[0_0_8px_rgba(59,130,246,0.5)] font-black text-5xl">+</span>
+                                            <span style={{ color: 'var(--logo-plus-color)' }} className="drop-shadow-[0_0_8px_rgba(59,130,246,0.5)] font-black text-5xl">+</span>
                                         </div>
                                         <p className="text-[10px] text-slate-400 text-center tracking-widest uppercase font-semibold">Central de Gerenciamento Unificado</p>
                                     </div>
@@ -1430,7 +1455,7 @@
 
                                             <div className="text-center mb-6">
                                                 <span className="text-[9px] font-extrabold uppercase bg-brandAccent/10 text-brandAccent px-2.5 py-1 rounded border border-brandAccent/20 tracking-wider">
-                                                    PrÃ©-visualizaÃ§Ã£o
+                                                    Pré-visualização
                                                 </span>
                                                 <h4 className="text-sm font-bold text-white mt-2">Sua Conta Almeida+</h4>
                                             </div>
@@ -1461,17 +1486,17 @@
 
                                                 <div className="h-[1px] bg-white/5 my-1" />
                                                 <div className="text-[10px] text-slate-400 font-mono flex items-center justify-between">
-                                                    <span>NÃ­vel: {currentUser.role === 'admin' ? 'Administrador' : 'Membro'}</span>
+                                                    <span>Nível: {currentUser.role === 'admin' ? 'Administrador' : 'Membro'}</span>
                                                     <span className="text-brandAccent">ID: {currentUser.name.toLowerCase()}</span>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        {/* Coluna 2: FormulÃ¡rio e ConfiguraÃ§Ãµes */}
+                                        {/* Coluna 2: Formulário e Configurações */}
                                         <div className="w-full md:w-7/12 p-8 flex flex-col gap-6 justify-between bg-black/30">
                                             <div>
                                                 <h2 className="text-2xl font-black text-white tracking-tight">Primeiro Acesso</h2>
-                                                <p className="text-xs text-slate-400 mt-1">Configure seus acessos iniciais de forma fÃ¡cil e intuitiva.</p>
+                                                <p className="text-xs text-slate-400 mt-1">Configure seus acessos iniciais de forma fácil e intuitiva.</p>
                                             </div>
 
                                             <div className="space-y-5">
@@ -1564,7 +1589,7 @@
                                                             {wizardCustomAvatarUrl && (
                                                                 <div className="flex items-center gap-3 p-3 rounded-xl bg-black/25 border border-white/5">
                                                                     <img src={wizardCustomAvatarUrl} alt="Preview" className="w-12 h-12 rounded-xl object-cover border border-white/10" onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150' }} />
-                                                                    <span className="text-[10px] text-slate-400">PrÃ©-visualizaÃ§Ã£o da imagem externa</span>
+                                                                    <span className="text-[10px] text-slate-400">Pré-visualização da imagem externa</span>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -1577,7 +1602,7 @@
                                                                 {currentUser.name.substring(0,2).toUpperCase()}
                                                             </div>
                                                             <div>
-                                                                <p className="font-bold text-white uppercase tracking-wider text-[9px]">PadrÃ£o da Plataforma</p>
+                                                                <p className="font-bold text-white uppercase tracking-wider text-[9px]">Padrão da Plataforma</p>
                                                                 <p className="mt-0.5 text-slate-500">Exibiremos suas iniciais coloridas de forma minimalista.</p>
                                                             </div>
                                                         </div>
@@ -1593,7 +1618,7 @@
                                                         return;
                                                     }
                                                     if (wizardPassword !== wizardConfirmPassword) {
-                                                        setWizardPasswordError('As senhas nÃ£o coincidem.');
+                                                        setWizardPasswordError('As senhas não coincidem.');
                                                         return;
                                                     }
 
@@ -1628,10 +1653,10 @@
                             {/* App Header for Authenticated users */}
                             <header className="flex items-center justify-between gap-4 py-2 border-b border-white/5 select-none">
                                 <div className="flex items-center gap-1 font-sans text-2xl font-extrabold tracking-tight drop-shadow-[0_0_10px_rgba(59,130,246,0.2)]">
-                                    <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 bg-clip-text text-transparent font-black">
+                                    <span style={{ color: 'var(--logo-text-color)' }} className="font-black">
                                         ALMEIDA
                                     </span>
-                                    <span className="text-brandAccent font-black text-3xl">+</span>
+                                    <span style={{ color: 'var(--logo-plus-color)' }} className="font-black text-3xl">+</span>
                                 </div>
 
                                 <div className="flex items-center gap-3">
@@ -1649,16 +1674,10 @@
                                     setSidebarCollapsed(!sidebarCollapsed);
                                     localStorage.setItem('ap_sidebar_collapsed', JSON.stringify(!sidebarCollapsed));
                                 }}
-                                className="hidden lg:block fixed bottom-6 left-6 w-12 h-12 rounded-full bg-gradient-to-r from-brandAccent to-brandViolet text-white shadow-neon-blue hover:shadow-neon-violet flex items-center justify-center z-40 transition-all duration-300 hover:scale-110 active:scale-95"
+                                className="hidden lg:flex fixed bottom-6 left-6 w-12 h-12 rounded-full bg-gradient-to-r from-brandAccent to-brandViolet text-white shadow-neon-blue hover:shadow-neon-violet items-center justify-center z-40 transition-all duration-300 hover:scale-110 active:scale-95"
                                 title={sidebarCollapsed ? 'Expandir Menu' : 'Recolher Menu'}
                             >
-                                {sidebarCollapsed ? (
-                                    <Icon name="settings" className="w-5 h-5" />
-                                ) : (
-                                    <svg fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                                    </svg>
-                                )}
+                                <Icon name={sidebarCollapsed ? 'chevronRight' : 'chevronLeft'} className="w-6 h-6" />
                             </button>
 
                             <div className="flex flex-col lg:flex-row gap-6 items-start">
@@ -1744,7 +1763,7 @@
                                             title={sidebarCollapsed ? 'Sair' : ''}
                                         >
                                             <Icon name="logout" className="w-5 h-5 shrink-0" />
-                                            {!sidebarCollapsed && <span>Encerrar SessÃ£o</span>}
+                                            {!sidebarCollapsed && <span>Encerrar Sessão</span>}
                                         </button>
                                     </nav>
                                 </aside>
@@ -1855,10 +1874,10 @@
                                                 </div>
                                                 <h3 className="text-lg font-extrabold text-white">Streaming Bloqueado</h3>
                                                 <p className="text-xs text-slate-400 mt-2 max-w-md mx-auto leading-relaxed">
-                                                    VocÃª nÃ£o possui este plano ativado na sua conta. PeÃ§a a liberaÃ§Ã£o ao administrador no WhatsApp.
+                                                    Você não possui este plano ativado na sua conta. Peça a liberação ao administrador no WhatsApp.
                                                 </p>
                                                 <a
-                                                    href={`https://wa.me/5511999999999?text=OlÃ¡%20Almeida,%20gostaria%20de%20ativar%20acesso%20ao%20streaming%20${platforms.find(p => p.id === activePlatformId)?.name}`}
+                                                    href={`https://wa.me/5511999999999?text=Olá%20Almeida,%20gostaria%20de%20ativar%20acesso%20ao%20streaming%20${platforms.find(p => p.id === activePlatformId)?.name}`}
                                                     target="_blank"
                                                     className="mt-6 px-6 py-3 rounded-xl bg-brandAccent text-white text-xs font-bold tracking-wide shadow-lg hover:shadow-neon-blue transition-all duration-200"
                                                 >
@@ -1908,7 +1927,7 @@
                                                             </h3>
 
                                                             <p className="text-xs text-slate-300 line-clamp-3 leading-relaxed mb-6">
-                                                                {heroMovie.overview || 'Sinopse oficial do TMDB. Explore e assista ao tÃ­tulo direto na plataforma correspondente.'}
+                                                                {heroMovie.overview || 'Sinopse oficial do TMDB. Explore e assista ao título direto na plataforma correspondente.'}
                                                             </p>
 
                                                             <div className="flex items-center gap-3 flex-wrap">
@@ -1970,7 +1989,7 @@
                                                                 </div>
                                                             ) : movies.length === 0 ? (
                                                                 <div className="text-center py-12 text-slate-500 font-bold text-sm">
-                                                                    Nenhum resultado encontrado no catÃ¡logo.
+                                                                    Nenhum resultado encontrado no catálogo.
                                                                 </div>
                                                             ) : (
                                                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -2063,7 +2082,7 @@
                                             <div className="glass-panel rounded-2xl p-5 border-l-4 border-l-brandViolet shadow-neon-violet">
                                                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Streamings Integrados</p>
                                                 <p className="text-2xl font-black text-white mt-1 font-mono">{platforms.filter(p => p.enabled).length} Provedores</p>
-                                                <span className="text-[10px] text-slate-400 mt-0.5 block">TMDb RegiÃ£o BR</span>
+                                                <span className="text-[10px] text-slate-400 mt-0.5 block">TMDb Região BR</span>
                                             </div>
 
                                             <div className="glass-panel rounded-2xl p-5 border-l-4 border-l-brandEmerald">
@@ -2170,7 +2189,7 @@
                                                     })}
                                                 </div>
 
-                                                {/* FormulÃ¡rio ColapsÃ¡vel de Novo Amigo */}
+                                                {/* Formulário Colapsável de Novo Amigo */}
                                                 <div className="glass-panel rounded-2xl border border-white/5 overflow-hidden">
                                                     <button
                                                         type="button"
@@ -2181,7 +2200,7 @@
                                                             <Icon name="plus" className="w-4 h-4 text-brandAccent" />
                                                             <span>Cadastrar Novo Amigo</span>
                                                         </span>
-                                                        <span className="text-slate-500 font-mono text-[10px]">{showAddUser ? 'â–² Recolher' : 'â–¼ Expandir'}</span>
+                                                        <span className="text-slate-500 font-mono text-[10px]">{showAddUser ? '▲ Recolher' : '▼ Expandir'}</span>
                                                     </button>
 
                                                     {showAddUser && (
@@ -2275,7 +2294,7 @@
                                                                     </div>
                                                                 </div>
 
-                                                                {/* Inline Steppers de Vagas e OcupaÃ§Ã£o */}
+                                                                {/* Inline Steppers de Vagas e Ocupação */}
                                                                 <div className="grid grid-cols-2 gap-4 bg-black/20 p-4 rounded-2xl border border-white/5">
                                                                     {/* Perfis Ocupados Stepper */}
                                                                     <div className="flex flex-col gap-1.5 items-center">
@@ -2325,7 +2344,7 @@
                                                                 {/* Progress Bar of Occupied Vagas */}
                                                                 <div>
                                                                     <div className="flex justify-between items-center text-[10px] text-slate-400 mb-1.5">
-                                                                        <span>Progresso de OcupaÃ§Ã£o</span>
+                                                                        <span>Progresso de Ocupação</span>
                                                                         <span className={`font-extrabold font-mono uppercase text-[9px] ${isFull ? 'text-brandRose' : 'text-brandEmerald'}`}>
                                                                             {isFull ? 'Lotado' : `${p.totalSlots - p.occupiedSlots} Vagas`}
                                                                         </span>
@@ -2382,7 +2401,7 @@
                                                     })}
                                                 </div>
 
-                                                {/* FormulÃ¡rio ColapsÃ¡vel de Novo Provedor */}
+                                                {/* Formulário Colapsável de Novo Provedor */}
                                                 <div className="glass-panel rounded-2xl border border-white/5 overflow-hidden">
                                                     <button
                                                         type="button"
@@ -2393,7 +2412,7 @@
                                                             <Icon name="plus" className="w-4 h-4 text-brandAccent" />
                                                             <span>Adicionar Provedor de Streaming</span>
                                                         </span>
-                                                        <span className="text-slate-500 font-mono text-[10px]">{showAddPlatform ? 'â–² Recolher' : 'â–¼ Expandir'}</span>
+                                                        <span className="text-slate-500 font-mono text-[10px]">{showAddPlatform ? '▲ Recolher' : '▼ Expandir'}</span>
                                                     </button>
 
                                                     {showAddPlatform && (
@@ -2530,14 +2549,14 @@
                                             {/* Content Details */}
                                             <div className="p-6 space-y-4">
                                                 <div className="flex justify-between items-center text-xs text-slate-400 font-semibold border-b border-white/5 pb-3">
-                                                    <span>LanÃ§amento: {selectedMovie.release_date || '2024'}</span>
+                                                    <span>Lançamento: {selectedMovie.release_date || '2024'}</span>
                                                     <span>Idioma Original: {selectedMovie.original_language?.toUpperCase() || 'PT'}</span>
                                                 </div>
 
                                                 <div className="space-y-2">
                                                     <h4 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Sinopse</h4>
                                                     <p className="text-xs text-slate-400 leading-relaxed font-medium">
-                                                        {selectedMovie.overview || 'Sinopse oficial indisponÃ­vel. Explore e assista ao tÃ­tulo direto na plataforma correspondente para conferir todos os detalhes.'}
+                                                        {selectedMovie.overview || 'Sinopse oficial indisponível. Explore e assista ao título direto na plataforma correspondente para conferir todos os detalhes.'}
                                                     </p>
                                                 </div>
 
@@ -2623,14 +2642,14 @@
                                     </div>
                                     <div className="flex gap-4">
                                         <span className="hover:text-slate-400 transition-colors cursor-pointer">Termos de Uso Privado</span>
-                                        <span>â€¢</span>
-                                        <span className="hover:text-slate-400 transition-colors cursor-pointer">SeguranÃ§a de Dados</span>
-                                        <span>â€¢</span>
+                                        <span>•</span>
+                                        <span className="hover:text-slate-400 transition-colors cursor-pointer">Segurança de Dados</span>
+                                        <span>•</span>
                                         <a href="https://wa.me/5511999999999" target="_blank" className="hover:text-slate-400 transition-colors">Suporte Direto</a>
                                     </div>
                                 </div>
                                 <p className="mt-4 text-[9px] text-slate-600 leading-relaxed max-w-4xl mx-auto">
-                                    Plataforma de uso estritamente pessoal e privado entre amigos. Desenvolvido com fins demonstrativos integrando a API TMDB sob diretrizes de uso nÃ£o comercial.
+                                    Plataforma de uso estritamente pessoal e privado entre amigos. Desenvolvido com fins demonstrativos integrando a API TMDB sob diretrizes de uso não comercial.
                                 </p>
                             </footer>
                         </div>
@@ -2646,3 +2665,4 @@
     </script>
 </body>
 </html>
+
