@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -193,15 +193,6 @@
         const REGION = 'BR';
         const LANG = 'pt-BR';
 
-        // Preset Avatars for First-Time login setup
-        const PRESET_AVATARS = [
-            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
-            'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=150',
-            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150',
-            'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150',
-            'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=150',
-            'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=150'
-        ];
 
         // BrandLogo Vector component for safe premium visualization
         const BrandLogo = ({ name, className = "w-6 h-6" }) => {
@@ -430,6 +421,11 @@
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                     </svg>
                 ),
+                user: (
+                    <svg fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className={className}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                    </svg>
+                ),
                 chevronLeft: (
                     <svg fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className={className}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -628,12 +624,12 @@
             const [wizardPassword, setWizardPassword] = useState('');
             const [wizardConfirmPassword, setWizardConfirmPassword] = useState('');
             const [wizardPasswordError, setWizardPasswordError] = useState('');
-            const [wizardAvatarType, setWizardAvatarType] = useState('preset'); // 'preset' | 'custom' | 'none'
-            const [wizardSelectedAvatar, setWizardSelectedAvatar] = useState(PRESET_AVATARS[0]);
+            const [wizardAvatarType, setWizardAvatarType] = useState('none'); // 'custom' | 'none'
             const [wizardCustomAvatarUrl, setWizardCustomAvatarUrl] = useState('');
 
             // --- INTERACTIVE SYSTEM STATES ---
             const [activePlatformId, setActivePlatformId] = useState('all');
+            const [revealedPasswords, setRevealedPasswords] = useState({});
             const [movies, setMovies] = useState([]);
             const [moviesPopular, setMoviesPopular] = useState([]);
             const [moviesTrending, setMoviesTrending] = useState([]);
@@ -648,6 +644,9 @@
             const [heroMovie, setHeroMovie] = useState(null);
             const [isLoadingMovies, setIsLoadingMovies] = useState(false);
             const [searchQuery, setSearchQuery] = useState('');
+            const [settingsPassword, setSettingsPassword] = useState('');
+            const [settingsAvatarUrl, setSettingsAvatarUrl] = useState('');
+            const [isSavingSettings, setIsSavingSettings] = useState(false);
             const [myList, setMyList] = useState(() => {
                 const saved = localStorage.getItem('ap_mylist');
                 return saved ? JSON.parse(saved) : [];
@@ -712,6 +711,17 @@
                         .catch(e => console.error('Supabase users load error', e));
                 }
             }, []);
+
+            useEffect(() => {
+                if (window.supabase && currentUser) {
+                    window.supabase.getUserFavorites(currentUser.id)
+                        .then(favs => {
+                            if (favs) setMyList(favs.map(f => f.movie_id));
+                        })
+                        .catch(e => console.error(e));
+                }
+            }, [currentUser]);
+
             useEffect(() => {
                 localStorage.setItem('ap_users', JSON.stringify(users));
             }, [users]);
@@ -1006,29 +1016,31 @@
             };
 
             // --- ADMIN ACTIONS ---
-            const handleTogglePermission = (userId, platformId) => {
-                setUsers(prev => prev.map(u => {
-                    if (u.id === userId) {
-                        const hasPlat = u.platforms.includes(platformId);
-                        const updatedPlats = hasPlat
-                            ? u.platforms.filter(id => id !== platformId)
-                            : [...u.platforms, platformId];
-                        return { ...u, platforms: updatedPlats };
-                    }
-                    return u;
-                }));
+            const handleTogglePermission = async (userId, platformId) => {
+                const userToUpdate = users.find(u => u.id === userId);
+                if (!userToUpdate) return;
+                const hasPlat = userToUpdate.platforms.includes(platformId);
+                const updatedPlats = hasPlat
+                    ? userToUpdate.platforms.filter(id => id !== platformId)
+                    : [...userToUpdate.platforms, platformId];
+
+                setUsers(prev => prev.map(u => u.id === userId ? { ...u, platforms: updatedPlats } : u));
+                if (window.supabase) await window.supabase.updateUser(userId, { platforms: updatedPlats });
 
                 setTimeout(() => {
                     setPlatforms(prev => prev.map(p => {
-                        const count = users.filter(u => u.id !== 'allmeiids@gmail.com' && u.platforms.includes(p.id)).length + 1;
-                        return { ...p, occupiedSlots: count };
+                        const count = users.filter(u => u.role !== 'admin' && u.platforms.includes(p.id)).length + 1;
+                        if (p.occupied_slots !== count) {
+                            if (window.supabase) window.supabase.updatePlatform(p.id, { occupied_slots: count });
+                        }
+                        return { ...p, occupied_slots: count, occupiedSlots: count };
                     }));
                 }, 50);
 
-                showToast('Permissões do usuário atualizadas!', 'success');
+                showToast('Permissões do usuário atualizadas no Banco!', 'success');
             };
 
-            const handleAddUser = (e) => {
+            const handleAddUser = async (e) => {
                 e.preventDefault();
                 if (!newUserName || !newUserEmail || !newUserPassword) {
                     showToast('Preencha todos os campos do usuário.', 'error');
@@ -1041,36 +1053,48 @@
                 }
 
                 const newUser = {
-                    id: newUserEmail.toLowerCase().trim(),
                     name: newUserName,
                     email: newUserEmail.toLowerCase().trim(),
                     password: newUserPassword,
                     role: 'user',
                     active: true,
                     platforms: [],
-                    avatar: null,
-                    isFirstLogin: true
+                    is_first_login: true
                 };
 
-                setUsers(prev => [...prev, newUser]);
+                if (window.supabase) {
+                    const created = await window.supabase.createUser(newUser);
+                    if (created) {
+                        setUsers(prev => [...prev, created]);
+                    } else {
+                        showToast('Erro ao criar no banco.', 'error');
+                        return;
+                    }
+                } else {
+                    newUser.id = Date.now().toString(); // local fallback
+                    setUsers(prev => [...prev, newUser]);
+                }
+
                 setNewUserName('');
                 setNewUserEmail('');
                 setNewUserPassword('');
                 showToast('Amigo cadastrado com sucesso!', 'success');
             };
 
-            const handleDeleteUser = (userId) => {
-                if (userId === 'allmeiids@gmail.com') {
+            const handleDeleteUser = async (userId) => {
+                const userToDelete = users.find(u => u.id === userId);
+                if (userToDelete && userToDelete.email === 'allmeiids@gmail.com') {
                     showToast('Você não pode deletar a conta Admin.', 'error');
                     return;
                 }
-                if (confirm('Deseja realmente remover este usuário?')) {
+                if (confirm('Deseja realmente remover este usuário do banco?')) {
+                    if (window.supabase) await window.supabase.request('DELETE', `users?id=eq.${userId}`);
                     setUsers(prev => prev.filter(u => u.id !== userId));
                     showToast('Usuário removido.', 'success');
                 }
             };
 
-            const handleAddPlatform = (e) => {
+            const handleAddPlatform = async (e) => {
                 e.preventDefault();
                 if (!newPlatformName || !newPlatformTMDbId) {
                     showToast('Preencha pelo menos Nome e ID do TMDB.', 'error');
@@ -1086,18 +1110,22 @@
                     id: newPlatformTMDbId,
                     name: newPlatformName,
                     color: 'from-blue-600 to-sky-900',
-                    hoverColor: 'hover:border-blue-400',
+                    hover_color: 'hover:border-blue-400',
                     logo: newPlatformLogo,
                     url: newPlatformUrl || 'https://google.com',
-                    totalSlots: parseInt(newPlatformSlots),
-                    occupiedSlots: 1,
+                    total_slots: parseInt(newPlatformSlots),
+                    occupied_slots: 1,
                     price: 0,
                     enabled: true,
                     email: newPlatformEmail,
                     password: newPlatformPassword
                 };
 
-                setPlatforms(prev => [...prev, newPlat]);
+                if (window.supabase) {
+                    await window.supabase.addPlatform(newPlat);
+                }
+                setPlatforms(prev => [...prev, { ...newPlat, hoverColor: newPlat.hover_color, totalSlots: newPlat.total_slots, occupiedSlots: newPlat.occupied_slots }]);
+                
                 setNewPlatformName('');
                 setNewPlatformTMDbId('');
                 setNewPlatformSlots(4);
@@ -1108,8 +1136,9 @@
                 showToast(`Streaming ${newPlatformName} adicionado!`, 'success');
             };
 
-            const handleRemovePlatform = (platId) => {
-                if (confirm('Deseja realmente remover esta plataforma?')) {
+            const handleRemovePlatform = async (platId) => {
+                if (confirm('Deseja realmente remover esta plataforma do banco?')) {
+                    if (window.supabase) await window.supabase.request('DELETE', `platforms?id=eq.${platId}`);
                     setPlatforms(prev => prev.filter(p => p.id !== platId));
                     setUsers(prev => prev.map(u => ({
                         ...u,
@@ -1119,54 +1148,50 @@
                 }
             };
 
-            const handleTogglePlatformStatus = (platId) => {
-                setPlatforms(prev => prev.map(p => {
-                    if (p.id === platId) {
-                        const nextState = !p.enabled;
-                        showToast(`Plataforma ${p.name} ${nextState ? 'Ativada' : 'Desativada'}!`, 'success');
-                        return { ...p, enabled: nextState };
-                    }
-                    return p;
-                }));
+            const handleTogglePlatformStatus = async (platId) => {
+                const plat = platforms.find(p => p.id === platId);
+                if (!plat) return;
+                const nextState = !plat.enabled;
+                
+                setPlatforms(prev => prev.map(p => p.id === platId ? { ...p, enabled: nextState } : p));
+                if (window.supabase) await window.supabase.updatePlatform(platId, { enabled: nextState });
+                showToast(`Plataforma ${plat.name} ${nextState ? 'Ativada' : 'Desativada'}!`, 'success');
             };
 
-            const handleAdjustOccupied = (id, delta) => {
-                setPlatforms(prev => prev.map(p => {
-                    if (p.id === id) {
-                        const newVal = Math.max(0, Math.min(p.occupiedSlots + delta, p.totalSlots));
-                        return { ...p, occupiedSlots: newVal };
-                    }
-                    return p;
-                }));
+            const handleAdjustOccupied = async (id, delta) => {
+                const plat = platforms.find(p => p.id === id);
+                if (!plat) return;
+                const total = plat.totalSlots || plat.total_slots || 4;
+                const current = plat.occupiedSlots !== undefined ? plat.occupiedSlots : plat.occupied_slots;
+                const newVal = Math.max(0, Math.min(current + delta, total));
+                
+                setPlatforms(prev => prev.map(p => p.id === id ? { ...p, occupied_slots: newVal, occupiedSlots: newVal } : p));
+                if (window.supabase) await window.supabase.updatePlatform(id, { occupied_slots: newVal });
             };
 
-            const handleAdjustTotal = (id, delta) => {
-                setPlatforms(prev => prev.map(p => {
-                    if (p.id === id) {
-                        const newVal = Math.max(1, p.totalSlots + delta);
-                        const clampedOccupied = Math.min(p.occupiedSlots, newVal);
-                        return { ...p, totalSlots: newVal, occupiedSlots: clampedOccupied };
-                    }
-                    return p;
-                }));
+            const handleAdjustTotal = async (id, delta) => {
+                const plat = platforms.find(p => p.id === id);
+                if (!plat) return;
+                const total = plat.totalSlots || plat.total_slots || 4;
+                const current = plat.occupiedSlots !== undefined ? plat.occupiedSlots : plat.occupied_slots;
+                const newVal = Math.max(1, total + delta);
+                const clampedOccupied = Math.min(current, newVal);
+                
+                setPlatforms(prev => prev.map(p => p.id === id ? { ...p, total_slots: newVal, totalSlots: newVal, occupied_slots: clampedOccupied, occupiedSlots: clampedOccupied } : p));
+                if (window.supabase) await window.supabase.updatePlatform(id, { total_slots: newVal, occupied_slots: clampedOccupied });
             };
 
-            const handleUpdateUrl = (id, url) => {
-                setPlatforms(prev => prev.map(p => {
-                    if (p.id === id) {
-                        return { ...p, url };
-                    }
-                    return p;
-                }));
+            const handleUpdateUrl = async (id, url) => {
+                setPlatforms(prev => prev.map(p => p.id === id ? { ...p, url } : p));
+                if (window.supabase) await window.supabase.updatePlatform(id, { url });
             };
 
-            const handleUpdatePlatformField = (id, field, value) => {
-                setPlatforms(prev => prev.map(p => {
-                    if (p.id === id) {
-                        return { ...p, [field]: value };
-                    }
-                    return p;
-                }));
+            const handleUpdatePlatformField = async (id, field, value) => {
+                setPlatforms(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p));
+                if (window.supabase) {
+                    const dbField = field === 'hoverColor' ? 'hover_color' : (field === 'totalSlots' ? 'total_slots' : (field === 'occupiedSlots' ? 'occupied_slots' : field));
+                    await window.supabase.updatePlatform(id, { [dbField]: value });
+                }
             };
 
             const copyText = (text, successMessage = 'Copiado para a area de transferencia.') => {
@@ -1280,9 +1305,10 @@
                     {/* ======================================================== */}
                     {currentRoute === 'login' && (
                         <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center bg-[#05070d]">
+                            <div className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-40" style={{ backgroundImage: 'url(https://image.tmdb.org/t/p/original/tElnmtQ6snFIgicWEP67FACtWS0.jpg)', filter: 'blur(4px) brightness(0.6)' }} />
                             <div className="absolute inset-0 z-0">
-                                <div className="absolute inset-0 bg-gradient-to-r from-brandDark via-brandDark/95 to-brandDark" />
-                                <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(59,130,246,0.05),rgba(139,92,246,0.03))]" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-brandDark via-brandDark/80 to-brandDark/40" />
+                                <div className="absolute inset-0 bg-gradient-to-r from-brandDark via-brandDark/95 to-transparent md:w-2/3" />
                             </div>
 
                             {/* LEFT SIDE: Clean dark card for Login */}
@@ -1452,17 +1478,10 @@
                                                     <div className="flex gap-2">
                                                         <button
                                                             type="button"
-                                                            onClick={() => setWizardAvatarType('preset')}
-                                                            className={`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${wizardAvatarType === 'preset' ? 'bg-brandAccent/10 border-brandAccent text-brandAccent shadow-neon-blue' : 'bg-transparent border-white/10 text-slate-400 hover:text-white'}`}
-                                                        >
-                                                            Presets
-                                                        </button>
-                                                        <button
-                                                            type="button"
                                                             onClick={() => setWizardAvatarType('custom')}
                                                             className={`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${wizardAvatarType === 'custom' ? 'bg-brandAccent/10 border-brandAccent text-brandAccent shadow-neon-blue' : 'bg-transparent border-white/10 text-slate-400 hover:text-white'}`}
                                                         >
-                                                            Link Externo
+                                                            Upload de Foto
                                                         </button>
                                                         <button
                                                             type="button"
@@ -1473,36 +1492,52 @@
                                                         </button>
                                                     </div>
 
-                                                    {/* Pre-defined Avatars Carousel */}
-                                                    {wizardAvatarType === 'preset' && (
-                                                        <div className="flex gap-3 overflow-x-auto py-2 custom-scrollbar">
-                                                            {PRESET_AVATARS.map((url, idx) => (
-                                                                <button
-                                                                    key={idx}
-                                                                    type="button"
-                                                                    onClick={() => setWizardSelectedAvatar(url)}
-                                                                    className={`relative rounded-xl overflow-hidden shrink-0 transition-all ${wizardSelectedAvatar === url ? 'ring-2 ring-brandAccent scale-95 shadow-neon-blue' : 'opacity-50 hover:opacity-100'}`}
-                                                                >
-                                                                    <img src={url} alt={`Preset ${idx}`} className="w-12 h-12 object-cover" />
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    )}
-
-                                                    {/* Custom URL Field */}
+                                                    {/* Custom Avatar File Upload Field */}
                                                     {wizardAvatarType === 'custom' && (
                                                         <div className="space-y-3">
-                                                            <input
-                                                                type="url"
-                                                                value={wizardCustomAvatarUrl}
-                                                                onChange={(e) => setWizardCustomAvatarUrl(e.target.value)}
-                                                                placeholder="Cole a URL da imagem aqui (ex: Unsplash, Imgur...)"
-                                                                className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white placeholder-slate-600 text-xs focus:outline-none focus:border-brandAccent transition-all"
-                                                            />
+                                                            <div className="relative group cursor-pointer w-full">
+                                                                <input
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    onChange={(e) => {
+                                                                        const file = e.target.files[0];
+                                                                        if (!file) return;
+                                                                        const reader = new FileReader();
+                                                                        reader.onload = (ev) => {
+                                                                            const img = new Image();
+                                                                            img.onload = () => {
+                                                                                const canvas = document.createElement('canvas');
+                                                                                const MAX_SIZE = 256;
+                                                                                let width = img.width;
+                                                                                let height = img.height;
+                                                                                if (width > height) {
+                                                                                    if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
+                                                                                } else {
+                                                                                    if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
+                                                                                }
+                                                                                canvas.width = width;
+                                                                                canvas.height = height;
+                                                                                const ctx = canvas.getContext('2d');
+                                                                                ctx.drawImage(img, 0, 0, width, height);
+                                                                                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                                                                                setWizardCustomAvatarUrl(dataUrl);
+                                                                            };
+                                                                            img.src = ev.target.result;
+                                                                        };
+                                                                        reader.readAsDataURL(file);
+                                                                    }}
+                                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                                />
+                                                                <div className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 border-dashed text-white text-xs flex items-center justify-center gap-2 group-hover:border-brandAccent transition-all">
+                                                                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current text-slate-400 group-hover:text-brandAccent transition-all"><path d="M12 2L8 6h3v8h2V6h3l-4-4zM5 18v2h14v-2H5z"/></svg>
+                                                                    <span>Escolher arquivo...</span>
+                                                                </div>
+                                                            </div>
+
                                                             {wizardCustomAvatarUrl && (
                                                                 <div className="flex items-center gap-3 p-3 rounded-xl bg-black/25 border border-white/5">
-                                                                    <img src={wizardCustomAvatarUrl} alt="Preview" className="w-12 h-12 rounded-xl object-cover border border-white/10" onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150' }} />
-                                                                    <span className="text-[10px] text-slate-400">Pré-visualização da imagem externa</span>
+                                                                    <img src={wizardCustomAvatarUrl} alt="Preview" className="w-12 h-12 rounded-xl object-cover border border-white/10" />
+                                                                    <span className="text-[10px] text-slate-400">Pré-visualização da sua foto</span>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -1525,7 +1560,7 @@
 
                                             <button
                                                 type="button"
-                                                onClick={() => {
+                                                onClick={async () => {
                                                     if (wizardPassword.length < 4) {
                                                         setWizardPasswordError('A senha deve ter pelo menos 4 caracteres.');
                                                         return;
@@ -1536,9 +1571,7 @@
                                                     }
 
                                                     let chosenAvatar = null;
-                                                    if (wizardAvatarType === 'preset') {
-                                                        chosenAvatar = wizardSelectedAvatar;
-                                                    } else if (wizardAvatarType === 'custom') {
+                                                    if (wizardAvatarType === 'custom') {
                                                         chosenAvatar = wizardCustomAvatarUrl || null;
                                                     }
 
@@ -1564,21 +1597,25 @@
                             )}
 
                             {/* App Header for Authenticated users */}
-                            <header className="flex items-center justify-between gap-4 py-2 border-b border-white/5 select-none">
-                                <div className="flex items-center gap-1 font-sans text-2xl font-extrabold tracking-tight drop-shadow-[0_0_10px_rgba(59,130,246,0.2)]">
-                                    <span style={{ color: 'var(--logo-text-color)' }} className="font-black">
+                            <header className="flex items-center justify-between gap-4 py-3 lg:py-4 border-b border-white/5 select-none z-30 relative">
+                                <div className="flex items-center gap-1 font-sans text-3xl lg:text-4xl font-extrabold tracking-tight drop-shadow-[0_0_10px_rgba(59,130,246,0.2)]">
+                                    <span style={{ color: 'var(--logo-text-color)' }} className="font-black tracking-tighter">
                                         ALMEIDA
                                     </span>
-                                    <span style={{ color: 'var(--logo-plus-color)' }} className="font-black text-3xl">+</span>
+                                    <span style={{ color: 'var(--logo-plus-color)' }} className="font-black text-4xl lg:text-5xl drop-shadow-[0_0_15px_rgba(229,71,17,0.4)]">+</span>
                                 </div>
-
-                                <div className="flex items-center gap-3">
-                                    {currentUser.role === 'admin' && (
-                                        <span className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded bg-brandViolet/10 text-brandViolet border border-brandViolet/15">
-                                            Admin Mode
-                                        </span>
-                                    )}
-                                </div>
+                                {currentRoute === 'hub' && (
+                                    <div className="relative max-w-sm w-full hidden md:block">
+                                        <input
+                                            type="text"
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            placeholder="Pesquisar filmes..."
+                                            className="w-full pl-10 pr-4 py-2 rounded-xl bg-black/40 border border-white/10 text-sm focus:outline-none focus:border-brandAccent transition-all duration-200 text-white placeholder-slate-500"
+                                        />
+                                        <Icon name="search" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                                    </div>
+                                )}
                             </header>
 
                             {/* SIDEBAR TOGGLE BUTTON */}
@@ -1593,10 +1630,10 @@
                                 <Icon name={sidebarCollapsed ? 'chevronRight' : 'chevronLeft'} className="w-6 h-6" />
                             </button>
 
-                            <div className="flex flex-col lg:flex-row gap-6 items-start">
+                            <div className="flex flex-col lg:flex-row gap-6 p-6 items-start">
 
-                                {/* --- SIDEBAR LATERAL ESQUERDA (COLAPSÃVEL) --- */}
-                                <aside className={`${sidebarCollapsed ? 'lg:w-20' : 'lg:w-72'} w-full flex flex-col gap-5 shrink-0 lg:sticky lg:top-6 transition-all duration-300 ease-in-out`}>
+                                {/* --- SIDEBAR LATERAL ESQUERDA (COLAPSÃ VEL - APENAS DESKTOP) --- */}
+                                <aside className={`hidden lg:flex ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-72'} w-full flex-col gap-5 shrink-0 lg:sticky lg:top-6 transition-all duration-300 ease-in-out`}>
 
                                     {/* Profile Avatar widget */}
                                     <div className={`glass-panel rounded-2xl p-5 flex ${sidebarCollapsed ? 'flex-col items-center' : 'flex-col'} gap-4 relative overflow-hidden`}>
@@ -1619,6 +1656,15 @@
 
                                     {/* Sidebar Menu */}
                                     <nav className={`glass-panel rounded-2xl p-2.5 flex flex-col gap-1.5 transition-all duration-300 ${sidebarCollapsed ? 'items-center' : ''}`}>
+                                        <button
+                                            onClick={() => setCurrentRoute('settings')}
+                                            className={`w-full px-4 py-3 rounded-xl flex ${sidebarCollapsed ? 'justify-center' : ''} items-center gap-3 text-sm font-semibold transition-all duration-200 ${currentRoute === 'settings' ? 'bg-brandEmerald/15 text-brandEmerald border border-brandEmerald/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                                            title={sidebarCollapsed ? 'Configurações' : ''}
+                                        >
+                                            <Icon name="user" className="w-5 h-5 shrink-0" />
+                                            {!sidebarCollapsed && <span>Configurações</span>}
+                                        </button>
+
                                         {currentUser.role === 'admin' && (
                                             <button
                                                 onClick={() => setCurrentRoute('admin')}
@@ -1644,14 +1690,24 @@
 
                                         <button
                                             onClick={() => {
-                                                setCurrentRoute('hub');
-                                                showToast('Exibindo provedores contratados!', 'info');
+                                                setCurrentRoute('acessos');
                                             }}
-                                            className={`w-full px-4 py-3 rounded-xl flex ${sidebarCollapsed ? 'justify-center' : ''} items-center gap-3 text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200`}
+                                            className={`w-full px-4 py-3 rounded-xl flex ${sidebarCollapsed ? 'justify-center' : ''} items-center gap-3 text-sm font-semibold transition-all duration-200 ${currentRoute === 'acessos' ? 'bg-brandViolet/15 text-brandViolet border border-brandViolet/20 shadow-neon-violet' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
                                             title={sidebarCollapsed ? 'Meus Acessos' : ''}
                                         >
                                             <Icon name="key" className="w-5 h-5 shrink-0" />
                                             {!sidebarCollapsed && <span>Meus Acessos</span>}
+                                        </button>
+
+                                        <button
+                                            onClick={() => {
+                                                setCurrentRoute('financeiro');
+                                            }}
+                                            className={`w-full px-4 py-3 rounded-xl flex ${sidebarCollapsed ? 'justify-center' : ''} items-center gap-3 text-sm font-semibold transition-all duration-200 ${currentRoute === 'financeiro' ? 'bg-brandRose/15 text-brandRose border border-brandRose/20 shadow-neon-glow' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                                            title={sidebarCollapsed ? 'Financeiro' : ''}
+                                        >
+                                            <Icon name="support" className="w-5 h-5 shrink-0" />
+                                            {!sidebarCollapsed && <span>Financeiro</span>}
                                         </button>
 
                                         <a
@@ -1663,6 +1719,16 @@
                                             <Icon name="support" className="w-5 h-5 shrink-0" />
                                             {!sidebarCollapsed && <span>WhatsApp Suporte</span>}
                                         </a>
+
+                                        {!sidebarCollapsed && <div className="h-[1px] bg-white/5 my-1" />}
+
+                                        {/* Links Legais da Plataforma no Menu */}
+                                        {!sidebarCollapsed && (
+                                            <div className="flex flex-col gap-2 mt-2 px-2 text-[10px] text-slate-500 font-medium">
+                                                <span className="hover:text-slate-400 cursor-pointer">Termos de Uso Privado</span>
+                                                <span className="hover:text-slate-400 cursor-pointer">Segurança de Dados</span>
+                                            </div>
+                                        )}
 
                                         {!sidebarCollapsed && <div className="h-[1px] bg-white/5 my-1" />}
 
@@ -1688,43 +1754,47 @@
                                 {currentRoute === 'hub' && (
                                     <main className="flex-1 flex flex-col gap-6 min-w-0">
 
-                                        {/* Catalog top bar */}
-                                        <div className="glass-panel rounded-2xl p-5 flex flex-col gap-4">
-                                            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                                                <div>
-                                                    <h2 className="text-xl font-extrabold text-white tracking-tight">Catalogo Unificado</h2>
-                                                    <p className="text-xs text-slate-400">Explore um catalogo amplo dos streamings liberados para esta conta.</p>
-                                                </div>
+                                        {/* Lembrete Financeiro PIX */}
+                                        {currentUser && currentUser.dia_vencimento && (
+                                            (() => {
+                                                const today = new Date().getDate();
+                                                const due = currentUser.dia_vencimento;
+                                                const diff = due - today;
+                                                // Alert if due today, late, or within 3 days
+                                                const shouldAlert = (diff <= 3 && diff >= 0) || (today > due && today - due < 10);
+                                                
+                                                if (!shouldAlert) return null;
+                                                
+                                                return (
+                                                    <div onClick={() => setCurrentRoute('financeiro')} className="cursor-pointer glass-panel rounded-xl p-3 bg-gradient-to-r from-brandRose/20 to-red-900/20 border border-brandRose/30 flex items-center justify-between shadow-neon-glow hover:brightness-110 transition-all">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="p-2 rounded-full bg-brandRose/20 text-brandRose">
+                                                                <Icon name="support" className="w-5 h-5" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-xs font-bold text-white uppercase tracking-wider">Aviso de Fatura</p>
+                                                                <p className="text-[10px] text-slate-300">Seu acesso vence dia {due}. Clique aqui para ver o PIX.</p>
+                                                            </div>
+                                                        </div>
+                                                        <Icon name="chevronRight" className="w-5 h-5 text-brandRose" />
+                                                    </div>
+                                                );
+                                            })()
+                                        )}
 
-                                                {/* Search input */}
-                                                <div className="relative max-w-xl w-full">
-                                                    <input
-                                                        type="text"
-                                                        value={searchQuery}
-                                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                                        placeholder="Pesquisar filmes no catalogo..."
-                                                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/35 border border-white/5 text-sm focus:outline-none focus:border-brandAccent transition-all duration-200 text-white placeholder-slate-500"
-                                                    />
-                                                    <Icon name="search" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                                                </div>
-                                            </div>
-
-                                            <div className="flex flex-wrap gap-2">
-                                                {(accessiblePlatforms.length ? accessiblePlatforms : platforms.filter(p => p.enabled)).slice(0, 8).map(p => (
-                                                    <span key={p.id} className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-slate-300">
-                                                        <SafeLogo logo={p.logo} name={p.name} className="w-4 h-4 object-contain rounded" />
-                                                        <span className="truncate max-w-[120px]">{p.name}</span>
-                                                    </span>
-                                                ))}
-                                                {accessiblePlatforms.length > 8 && (
-                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-brandAccent/10 border border-brandAccent/20 text-[10px] font-bold text-brandAccent">
-                                                        +{accessiblePlatforms.length - 8}
-                                                    </span>
-                                                )}
-                                            </div>
+                                        {/* Search Input Mobile Only */}
+                                        <div className="relative w-full md:hidden">
+                                            <input
+                                                type="text"
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                placeholder="Pesquisar filmes no catalogo..."
+                                                className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/35 border border-white/5 text-sm focus:outline-none focus:border-brandAccent transition-all duration-200 text-white placeholder-slate-500"
+                                            />
+                                            <Icon name="search" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                                         </div>
 
-                                        {/* Channel Selector Bar */}
+                                        {/* Channel Selector Bar (Chips) */}
                                         <div className="w-full overflow-x-auto pb-2 custom-scrollbar">
                                             <div className="flex gap-4 min-w-max">
                                                 {/* "Todos os Canais" (All) Button */}
@@ -1733,16 +1803,14 @@
                                                         setActivePlatformId('all');
                                                         setIsPlaying(false);
                                                     }}
-                                                    className={`flex flex-col items-center p-3 rounded-2xl w-32 text-center transition-all duration-300 relative border ${
+                                                    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 border whitespace-nowrap ${
                                                         activePlatformId === 'all'
-                                                            ? 'bg-gradient-to-b from-brandAccent to-brandViolet border-white/20 text-white shadow-neon-glow scale-[1.03]'
-                                                            : 'bg-brandCard border-brandBorder text-slate-400 hover:bg-brandCard/90'
+                                                            ? 'bg-white/10 border-white/20 text-white shadow-md'
+                                                            : 'bg-transparent border-white/5 text-slate-400 hover:bg-white/5 hover:text-white'
                                                     }`}
                                                 >
-                                                    <div className="h-10 w-full flex items-center justify-center px-1 mb-2">
-                                                        <Icon name="grid" className="w-7 h-7" />
-                                                    </div>
-                                                    <span className="text-[10px] font-bold tracking-tight truncate max-w-full">Todos os canais</span>
+                                                    <Icon name="grid" className="w-4 h-4" />
+                                                    <span className="text-[11px] font-bold tracking-wider uppercase">Todos</span>
                                                 </button>
 
                                                 {platforms.filter(p => p.enabled).map(p => {
@@ -1756,22 +1824,20 @@
                                                                 setActivePlatformId(p.id);
                                                                 setIsPlaying(false);
                                                             }}
-                                                            className={`flex flex-col items-center p-3 rounded-2xl w-32 text-center transition-all duration-300 relative border ${
+                                                            className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 border whitespace-nowrap ${
                                                                 isActive
-                                                                    ? `bg-gradient-to-b ${p.color} border-white/20 text-white shadow-neon-glow scale-[1.03]`
-                                                                    : 'bg-brandCard border-brandBorder text-slate-400 hover:bg-brandCard/90'
+                                                                    ? `bg-gradient-to-r ${p.color} border-white/20 text-white shadow-md`
+                                                                    : 'bg-transparent border-white/5 text-slate-400 hover:bg-white/5 hover:text-white'
                                                             } ${!hasAccess ? 'opacity-40 hover:opacity-50' : ''}`}
                                                         >
                                                             {!hasAccess && (
-                                                                <div className="absolute top-2 right-2 p-1 rounded-full bg-black/60 border border-white/10 text-yellow-500">
+                                                                <div className="absolute top-2 right-2 p-1 rounded-full bg-black/60 border border-white/10 text-yellow-500 hidden">
                                                                     <Icon name="lock" className="w-2.5 h-2.5" />
                                                                 </div>
                                                             )}
 
-                                                            <div className="h-10 w-full flex items-center justify-center px-1 mb-2">
-                                                                <SafeLogo logo={p.logo} name={p.name} className="max-w-[82px] max-h-8 object-contain rounded" />
-                                                            </div>
-                                                            <span className="text-[10px] font-bold tracking-tight truncate max-w-full">{p.name}</span>
+                                                            <SafeLogo logo={p.logo} name={p.name} className="h-4 object-contain rounded" />
+                                                            <span className="text-[11px] font-bold tracking-wider uppercase">{p.name}</span>
                                                         </button>
                                                     );
                                                 })}
@@ -1862,9 +1928,11 @@
                                                                         const isStarred = myList.includes(heroMovie.id);
                                                                         if (isStarred) {
                                                                             setMyList(prev => prev.filter(id => id !== heroMovie.id));
+                                                                            if (window.supabase) window.supabase.removeFavorite(currentUser.id, heroMovie.id);
                                                                             showToast('Removido da sua lista', 'info');
                                                                         } else {
                                                                             setMyList(prev => [...prev, heroMovie.id]);
+                                                                            if (window.supabase) window.supabase.addFavorite(currentUser.id, heroMovie.id, heroMovie.title);
                                                                             showToast('Salvo na sua lista!', 'success');
                                                                         }
                                                                     }}
@@ -2008,10 +2076,17 @@
                                                                     <div>
                                                                         <label className="text-[10px] text-slate-500 uppercase tracking-wider font-bold block mb-1">Senha de Acesso</label>
                                                                         <div className="flex items-center justify-between gap-2 bg-black/40 px-3 py-2 rounded-lg border border-white/10">
-                                                                            <span className="text-xs text-brandViolet font-mono truncate">{p.password}</span>
-                                                                            <button onClick={() => copyText(p.password, 'Senha copiada!')} className="text-slate-400 hover:text-white transition-colors" title="Copiar Senha">
-                                                                                <Icon name="copy" className="w-4 h-4" />
-                                                                            </button>
+                                                                            <span className="text-xs text-brandViolet font-mono truncate">
+                                                                                {revealedPasswords[p.id] ? p.password : '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'}
+                                                                            </span>
+                                                                            <div className="flex gap-1.5">
+                                                                                <button onClick={() => setRevealedPasswords(prev => ({ ...prev, [p.id]: !prev[p.id] }))} className="text-slate-400 hover:text-white transition-colors" title={revealedPasswords[p.id] ? 'Ocultar' : 'Revelar'}>
+                                                                                    {revealedPasswords[p.id] ? <Icon name="lock" className="w-4 h-4" /> : <Icon name="search" className="w-4 h-4" />}
+                                                                                </button>
+                                                                                <button onClick={() => copyText(p.password, 'Senha copiada!')} className="text-slate-400 hover:text-white transition-colors" title="Copiar Senha">
+                                                                                    <Icon name="copy" className="w-4 h-4" />
+                                                                                </button>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -2480,6 +2555,44 @@
                                     </main>
                                 )}
 
+                                {/* ======================================================== */}
+                                {/*                     FINANCEIRO / PIX                     */}
+                                {/* ======================================================== */}
+                                {currentRoute === 'financeiro' && (
+                                    <main className="flex-1 flex flex-col gap-6 min-w-0">
+                                        <div className="glass-panel rounded-2xl p-6 flex flex-col gap-4">
+                                            <h2 className="text-2xl font-extrabold text-white tracking-tight">Painel Financeiro</h2>
+                                            <p className="text-sm text-slate-400">Pague sua fatura via PIX para não perder o acesso.</p>
+                                            
+                                            {currentUser && currentUser.dia_vencimento ? (
+                                                <div className="mt-6 flex flex-col items-center p-8 bg-black/30 border border-white/5 rounded-2xl max-w-lg mx-auto w-full relative overflow-hidden">
+                                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brandEmerald to-teal-500" />
+                                                    <h3 className="text-lg font-bold text-white mb-2">Fatura Mensal</h3>
+                                                    <p className="text-3xl font-black text-brandEmerald mb-6">
+                                                        R$ {(currentUser.valor_mensal || 25.00).toFixed(2).replace('.', ',')}
+                                                    </p>
+                                                    <div className="bg-white p-4 rounded-xl shadow-lg mb-6">
+                                                        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent('00020126440014br.gov.bcb.pix0122rodrigodevpro@gmail.com5204000053039865802BR5915RODRIGO ALMEIDA6006PALMAS62070503***6304EE88')}`} alt="QR Code PIX" className="w-48 h-48" />
+                                                    </div>
+                                                    
+                                                    <p className="text-xs text-slate-400 font-mono text-center mb-6 max-w-xs break-all select-all">
+                                                        00020126440014br.gov.bcb.pix0122rodrigodevpro@gmail.com5204000053039865802BR5915RODRIGO ALMEIDA6006PALMAS62070503***6304EE88
+                                                    </p>
+                                                    
+                                                    <button onClick={() => copyText('00020126440014br.gov.bcb.pix0122rodrigodevpro@gmail.com5204000053039865802BR5915RODRIGO ALMEIDA6006PALMAS62070503***6304EE88', 'Código PIX Copiado!')} className="w-full max-w-xs py-4 rounded-xl bg-gradient-to-r from-brandEmerald to-teal-500 text-white font-bold tracking-wider shadow-neon-glow hover:brightness-110 uppercase text-xs transition-all flex items-center justify-center gap-2">
+                                                        <Icon name="copy" className="w-5 h-5" />
+                                                        Copiar Código Copia e Cola
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="mt-6 p-8 bg-brandCard border border-brandBorder rounded-2xl text-center">
+                                                    <p className="text-slate-400">Seu plano financeiro ainda não foi configurado pelo administrador.</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </main>
+                                )}
+
                                 {/* Cinematic Movie Details Modal */}
                                 {selectedMovie && (
                                     <div className="fixed inset-0 z-[2100] flex items-center justify-center p-4 bg-brandDark/85 backdrop-blur-xl">
@@ -2570,9 +2683,11 @@
                                                             const isStarred = myList.includes(selectedMovie.id);
                                                             if (isStarred) {
                                                                 setMyList(prev => prev.filter(id => id !== selectedMovie.id));
+                                                                if (window.supabase) window.supabase.removeFavorite(currentUser.id, selectedMovie.id);
                                                                 showToast('Removido da sua lista', 'info');
                                                             } else {
                                                                 setMyList(prev => [...prev, selectedMovie.id]);
+                                                                if (window.supabase) window.supabase.addFavorite(currentUser.id, selectedMovie.id, selectedMovie.title);
                                                                 showToast('Salvo na sua lista!', 'success');
                                                             }
                                                         }}
@@ -2595,30 +2710,181 @@
                                         </div>
                                     </div>
                                 )}
+
+                                {/* --- SETTINGS SECTION --- */}
+                                {currentRoute === 'settings' && (
+                                    <div className="animate-float-up p-4 lg:p-8 space-y-8 pb-24">
+                                        <header className="mb-6">
+                                            <h2 className="text-2xl font-black text-white">Configurações de Perfil</h2>
+                                            <p className="text-slate-400 text-sm mt-1">Atualize sua foto ou mude sua senha.</p>
+                                        </header>
+
+                                        <div className="glass-panel rounded-2xl p-6 lg:p-8 space-y-8 max-w-2xl mx-auto lg:mx-0">
+                                            
+                                            {/* Avatar Settings */}
+                                            <div className="space-y-4">
+                                                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Sua Foto</h3>
+                                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                                                    <div className="relative shrink-0">
+                                                        {settingsAvatarUrl ? (
+                                                            settingsAvatarUrl === 'NONE' ? (
+                                                                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-brandAccent/25 to-brandViolet/25 border-2 border-brandAccent/15 text-white flex items-center justify-center font-black uppercase text-3xl">
+                                                                    {currentUser.name.substring(0,2).toUpperCase()}
+                                                                </div>
+                                                            ) : (
+                                                                <img src={settingsAvatarUrl} alt="Preview" className="w-24 h-24 rounded-2xl object-cover border-2 border-white/10" />
+                                                            )
+                                                        ) : (
+                                                            renderUserAvatar(currentUser, "w-24 h-24 rounded-2xl text-2xl")
+                                                        )}
+                                                    </div>
+                                                    
+                                                    <div className="space-y-3 flex-1 w-full">
+                                                        <div className="relative group cursor-pointer w-full">
+                                                            <input
+                                                                type="file"
+                                                                accept="image/*"
+                                                                onChange={(e) => {
+                                                                    const file = e.target.files[0];
+                                                                    if (!file) return;
+                                                                    const reader = new FileReader();
+                                                                    reader.onload = (ev) => {
+                                                                        const img = new Image();
+                                                                        img.onload = () => {
+                                                                            const canvas = document.createElement('canvas');
+                                                                            const MAX_SIZE = 256;
+                                                                            let width = img.width;
+                                                                            let height = img.height;
+                                                                            if (width > height) {
+                                                                                if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
+                                                                            } else {
+                                                                                if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
+                                                                            }
+                                                                            canvas.width = width;
+                                                                            canvas.height = height;
+                                                                            const ctx = canvas.getContext('2d');
+                                                                            ctx.drawImage(img, 0, 0, width, height);
+                                                                            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                                                                            setSettingsAvatarUrl(dataUrl);
+                                                                        };
+                                                                        img.src = ev.target.result;
+                                                                    };
+                                                                    reader.readAsDataURL(file);
+                                                                }}
+                                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                            />
+                                                            <div className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 border-dashed text-white text-sm flex items-center justify-center gap-2 group-hover:border-brandAccent transition-all">
+                                                                <Icon name="user" className="w-5 h-5 text-slate-400 group-hover:text-brandAccent" />
+                                                                <span>Escolher nova foto...</span>
+                                                            </div>
+                                                        </div>
+
+                                                        <button 
+                                                            onClick={() => setSettingsAvatarUrl('NONE')}
+                                                            className="text-xs text-brandRose hover:text-red-400 font-semibold transition"
+                                                        >
+                                                            Remover Foto Atual
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="h-[1px] bg-white/10"></div>
+
+                                            {/* Password Settings */}
+                                            <div className="space-y-4">
+                                                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Segurança</h3>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs text-slate-400 font-medium ml-1">Nova Senha (opcional)</label>
+                                                    <input
+                                                        type="password"
+                                                        value={settingsPassword}
+                                                        onChange={e => setSettingsPassword(e.target.value)}
+                                                        placeholder="Deixe em branco para não alterar"
+                                                        className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 text-white placeholder-slate-600 focus:outline-none focus:border-brandAccent transition-all"
+                                                    />
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="pt-4 flex justify-end">
+                                                <button 
+                                                    disabled={isSavingSettings}
+                                                    onClick={async () => {
+                                                        setIsSavingSettings(true);
+                                                        try {
+                                                            const updates = {};
+                                                            if (settingsAvatarUrl === 'NONE') {
+                                                                updates.avatar = null;
+                                                            } else if (settingsAvatarUrl) {
+                                                                updates.avatar = settingsAvatarUrl;
+                                                            }
+                                                            
+                                                            if (settingsPassword && settingsPassword.length >= 4) {
+                                                                updates.password = settingsPassword;
+                                                            } else if (settingsPassword && settingsPassword.length > 0) {
+                                                                showToast('A senha precisa ter pelo menos 4 caracteres.', 'error');
+                                                                setIsSavingSettings(false);
+                                                                return;
+                                                            }
+
+                                                            if (Object.keys(updates).length > 0 && window.supabase) {
+                                                                const res = await window.supabase.updateUser(currentUser.id, updates);
+                                                                if (res) {
+                                                                    setCurrentUser(res);
+                                                                    const updatedUsers = users.map(u => u.id === res.id ? res : u);
+                                                                    setUsers(updatedUsers);
+                                                                    localStorage.setItem('ap_users', JSON.stringify(updatedUsers));
+                                                                    showToast('Configurações salvas com sucesso!', 'success');
+                                                                    setSettingsPassword('');
+                                                                    setSettingsAvatarUrl('');
+                                                                } else {
+                                                                    showToast('Erro ao salvar.', 'error');
+                                                                }
+                                                            } else {
+                                                                showToast('Nenhuma alteração para salvar.', 'info');
+                                                            }
+                                                        } catch (e) {
+                                                            showToast('Erro de comunicação', 'error');
+                                                        }
+                                                        setIsSavingSettings(false);
+                                                    }}
+                                                    className={`px-6 py-3 rounded-xl font-bold text-sm shadow-neon-blue transition-all ${isSavingSettings ? 'bg-brandAccent/50 text-white/50 cursor-not-allowed' : 'bg-brandAccent text-white hover:bg-blue-500'}`}
+                                                >
+                                                    {isSavingSettings ? 'Salvando...' : 'Salvar Alterações'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
-                            {/* --- FOOTER --- */}
-                            <footer className="mt-8 pt-8 pb-4 border-t border-white/5 text-center text-[10px] text-slate-500 select-none w-full">
-                                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                                    <div className="flex items-center gap-1 font-sans font-extrabold tracking-tight">
-                                        <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 bg-clip-text text-transparent font-black">
-                                            ALMEIDA
-                                        </span>
-                                        <span className="text-brandAccent font-black text-xs">+</span>
-                                        <span className="ml-2 font-medium text-slate-600">Central de Streamings Compartilhados</span>
-                                    </div>
-                                    <div className="flex gap-4">
-                                        <span className="hover:text-slate-400 transition-colors cursor-pointer">Termos de Uso Privado</span>
-                                        <span>•</span>
-                                        <span className="hover:text-slate-400 transition-colors cursor-pointer">Segurança de Dados</span>
-                                        <span>•</span>
-                                        <a href="https://wa.me/5563999766887" target="_blank" className="hover:text-slate-400 transition-colors">Suporte Direto</a>
-                                    </div>
-                                </div>
-                                <p className="mt-4 text-[9px] text-slate-600 leading-relaxed max-w-4xl mx-auto">
-                                    Plataforma de uso estritamente pessoal e privado entre amigos. Desenvolvido com fins demonstrativos integrando a API TMDB sob diretrizes de uso não comercial.
-                                </p>
-                            </footer>
+                            {/* Mobile Bottom Navigation */}
+                            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#050B14]/95 backdrop-blur-xl border-t border-white/10 z-50 px-2 py-3 flex justify-around items-center shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+                                {currentUser.role === 'admin' && (
+                                    <button onClick={() => setCurrentRoute('admin')} className={`flex flex-col items-center gap-1 ${currentRoute === 'admin' ? 'text-brandViolet' : 'text-slate-500'}`}>
+                                        <Icon name="settings" className="w-5 h-5" />
+                                        <span className="text-[9px] font-bold">Admin</span>
+                                    </button>
+                                )}
+                                <button onClick={() => setCurrentRoute('hub')} className={`flex flex-col items-center gap-1 ${currentRoute === 'hub' ? 'text-brandAccent' : 'text-slate-500'}`}>
+                                    <Icon name="home" className="w-5 h-5" />
+                                    <span className="text-[9px] font-bold">Início</span>
+                                </button>
+                                <button onClick={() => setCurrentRoute('acessos')} className={`flex flex-col items-center gap-1 ${currentRoute === 'acessos' ? 'text-brandViolet' : 'text-slate-500'}`}>
+                                    <Icon name="key" className="w-5 h-5" />
+                                    <span className="text-[9px] font-bold">Acessos</span>
+                                </button>
+                                <button onClick={() => setCurrentRoute('financeiro')} className={`flex flex-col items-center gap-1 ${currentRoute === 'financeiro' ? 'text-brandRose' : 'text-slate-500'}`}>
+                                    <Icon name="support" className="w-5 h-5" />
+                                    <span className="text-[9px] font-bold">PIX</span>
+                                </button>
+                                <button onClick={() => setCurrentRoute('settings')} className={`flex flex-col items-center gap-1 ${currentRoute === 'settings' ? 'text-brandEmerald' : 'text-slate-500'}`}>
+                                    <Icon name="user" className="w-5 h-5" />
+                                    <span className="text-[9px] font-bold">Perfil</span>
+                                </button>
+                            </nav>
+
+                            {/* --- FOOTER MOVIDO PARA O MENU --- */}
                         </div>
                     )}
 
