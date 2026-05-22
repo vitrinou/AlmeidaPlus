@@ -2403,6 +2403,80 @@
                                             </span>
                                             <span className="text-[10px] text-brandAccent font-extrabold tracking-widest">ALMEIDA+ · Plataforma privada</span>
                                         </div>
+                                    </main>
+                                )}
+
+                                {/* ======================================================== */
+                                {/*                   MEUS ACESSOS                          */}
+                                {/* ======================================================== */}
+                                {currentRoute === 'acessos' && (
+                                    <main className="flex-1 flex flex-col gap-6 min-w-0 route-fade px-4 md:px-6">
+                                        <div className="glass-panel rounded-2xl p-6 flex flex-col gap-4">
+                                            <h2 className="text-2xl font-extrabold text-white tracking-tight">Meus Acessos</h2>
+                                            <p className="text-sm text-slate-400">Suas credenciais para os serviços de streaming liberados.</p>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
+                                                {accessiblePlatforms.length === 0 ? (
+                                                    <div className="col-span-full flex flex-col items-center py-16 gap-3 text-center">
+                                                        <Icon name="key" className="w-10 h-10 text-slate-600" />
+                                                        <p className="text-slate-400">Nenhum acesso liberado para sua conta no momento.</p>
+                                                        <p className="text-xs text-slate-600">Contate o administrador para liberar seus streamings.</p>
+                                                    </div>
+                                                ) : (
+                                                    accessiblePlatforms.map(p => (
+                                                        <div key={p.id} className="glass-panel rounded-2xl overflow-hidden shadow-xl border border-white/5 flex flex-col group hover:border-brandAccent/30 transition-all duration-300">
+                                                            <div className={`h-1.5 w-full bg-gradient-to-r ${p.color}`} />
+                                                            <div className="p-6 flex flex-col items-center flex-1 gap-4">
+                                                                <SafeLogo logo={p.logo} name={p.name} className="h-16 w-auto object-contain mb-2 drop-shadow-lg" />
+                                                                <h3 className="text-lg font-bold text-white text-center">{p.name}</h3>
+                                                                <div className="w-full mt-4 space-y-3 bg-black/30 p-4 rounded-xl border border-white/5">
+                                                                    <div>
+                                                                        <label className="text-[10px] text-slate-500 uppercase tracking-wider font-bold block mb-1">E-mail de Acesso</label>
+                                                                        <div className="flex items-center justify-between gap-2 bg-black/40 px-3 py-2 rounded-lg border border-white/10">
+                                                                            <span className="text-xs text-brandAccent font-mono truncate">{p.email || 'Não configurado'}</span>
+                                                                            {p.email && (
+                                                                                <button onClick={() => copyText(p.email, 'E-mail copiado!')} className="text-slate-400 hover:text-white transition-colors" title="Copiar E-mail">
+                                                                                    <Icon name="copy" className="w-4 h-4" />
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-[10px] text-slate-500 uppercase tracking-wider font-bold block mb-1">Senha de Acesso</label>
+                                                                        <div className="flex items-center justify-between gap-2 bg-black/40 px-3 py-2 rounded-lg border border-white/10">
+                                                                            <span className="text-xs text-brandAccent font-mono truncate">
+                                                                                {revealedPasswords[p.id] ? (p.password || 'Não configurado') : '••••••••'}
+                                                                            </span>
+                                                                            <div className="flex gap-1.5">
+                                                                                {p.password && (
+                                                                                    <>
+                                                                                        <button onClick={() => setRevealedPasswords(prev => ({ ...prev, [p.id]: !prev[p.id] }))} className="text-slate-400 hover:text-white transition-colors" title={revealedPasswords[p.id] ? 'Ocultar' : 'Revelar'}>
+                                                                                            {revealedPasswords[p.id] ? <Icon name="lock" className="w-4 h-4" /> : <Icon name="search" className="w-4 h-4" />}
+                                                                                        </button>
+                                                                                        <button onClick={() => copyText(p.password, 'Senha copiada!')} className="text-slate-400 hover:text-white transition-colors" title="Copiar Senha">
+                                                                                            <Icon name="copy" className="w-4 h-4" />
+                                                                                        </button>
+                                                                                    </>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <a
+                                                                    href={p.url || '#'}
+                                                                    target="_blank"
+                                                                    rel="noreferrer"
+                                                                    className={`mt-auto w-full py-3 rounded-xl bg-gradient-to-r ${p.color} text-white text-xs font-bold tracking-wider text-center shadow-lg hover:brightness-110 transition-all uppercase flex items-center justify-center gap-2`}
+                                                                >
+                                                                    <span>Acessar {p.name}</span>
+                                                                    <Icon name="chevronRight" className="w-4 h-4" />
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        </div>
 
                                         {/* WhatsApp Button for New Streaming Request */}
                                         <div className="glass-panel rounded-2xl p-5 flex flex-col gap-3">
@@ -2422,8 +2496,7 @@
                                 )}
 
 
-
-                                {/* ======================================================== */}
+                                {/* ======================================================== */
                                 {/*             4. ADMINISTRATOR CONTROL PANEL               */}
                                 {/* ======================================================== */}
                                 {currentRoute === 'admin' && currentUser.role === 'admin' && (
