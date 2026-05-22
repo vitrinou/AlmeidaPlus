@@ -25,9 +25,6 @@
     <!-- Supabase Client -->
     <script src="./supabase-client.js"></script>
 
-    <!-- QRCode.js (davidshimjs via cdnjs) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
     <script>
         tailwind.config = {
             theme: {
@@ -1181,28 +1178,6 @@
                     setPaymentAmount(JSON.parse(saved));
                 }
             }, [currentRoute, currentUser]);
-
-            // --- PIX QR CODE GENERATION ---
-            useEffect(() => {
-                if (currentRoute !== 'financeiro') return;
-                const container = document.getElementById('pix-qr-code');
-                if (!container) return;
-                container.innerHTML = '';
-                try {
-                    if (typeof QRCode !== 'undefined') {
-                        new QRCode(container, {
-                            text: pixPayload,
-                            width: 180,
-                            height: 180,
-                            colorDark: '#080A0F',
-                            colorLight: '#ffffff',
-                            correctLevel: QRCode.CorrectLevel.H
-                        });
-                    }
-                } catch(e) {
-                    console.error('QR Code generation error:', e);
-                }
-            }, [currentRoute, pixPayload]);
 
             // --- TRIGGER TOAST ---
             const showToast = (message, type = 'success') => {
@@ -2928,10 +2903,10 @@
 
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                                                 {/* Left: Payment card */}
-                                                <div className="flex flex-col items-center p-6 bg-black/30 border border-white/5 rounded-2xl relative overflow-hidden">
+                                                <div className="flex flex-col p-6 bg-black/30 border border-white/5 rounded-2xl relative overflow-hidden">
                                                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brandAccent to-brandRose" />
                                                     <h3 className="text-sm font-bold text-slate-300 mb-1">Valor Mensal</h3>
-                                                    <p className="text-4xl font-black text-white mb-4">
+                                                    <p className="text-4xl font-black text-white mb-2">
                                                         R$ {paymentAmount.toFixed(2).replace('.', ',')}
                                                     </p>
                                                     {paymentDueDate && (
@@ -2941,19 +2916,42 @@
                                                         </div>
                                                     )}
 
-                                                    {/* PIX QR Code */}
-                                                    <div className="bg-white p-3 rounded-xl shadow-lg mb-4" id="pix-qr-container">
-                                                        <div id="pix-qr-code" style={{ width: 180, height: 180 }}></div>
+                                                    {/* PIX Key Display */}
+                                                    <div className="w-full bg-black/40 rounded-xl border border-white/10 p-4 mb-4">
+                                                        <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold mb-2">Chave PIX</p>
+                                                        <p className="text-sm font-mono text-brandAccent font-bold break-all select-all">
+                                                            allmeida.corp@gmail.com
+                                                        </p>
                                                     </div>
-                                                    <p className="text-[9px] text-slate-500 font-mono text-center mb-4 max-w-xs break-all select-all">
-                                                        Escaneie o QR Code ou copie o código PIX abaixo
-                                                    </p>
+
                                                     <div className="w-full flex flex-col gap-2">
-                                                        <button onClick={() => copyText(pixPayload, 'Código PIX copiado!')} className="w-full py-3 rounded-xl bg-gradient-to-r from-brandAccent to-brandRose text-white font-bold text-xs tracking-wider hover:brightness-110 transition-all flex items-center justify-center gap-2">
+                                                        <button onClick={() => copyText(PIX_KEY, 'Chave PIX copiada!')} className="w-full py-3 rounded-xl bg-gradient-to-r from-brandAccent to-brandRose text-white font-bold text-xs tracking-wider hover:brightness-110 transition-all flex items-center justify-center gap-2">
                                                             <Icon name="copy" className="w-4 h-4" />
-                                                            COPIAR PIX
+                                                            COPIAR CHAVE PIX
                                                         </button>
-                                                        <button onClick={markAsPaid} className="w-full py-3 rounded-xl bg-brandEmerald/10 border border-brandEmerald/20 text-brandEmerald font-bold text-xs tracking-wider hover:bg-brandEmerald/20 transition-all flex items-center justify-center gap-2">
+                                                        <button onClick={() => {
+                                                            const today = new Date();
+                                                            const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
+                                                            setPaymentStatus('paid');
+                                                            setPaymentDueDate(nextMonth.toISOString());
+                                                            const newHistory = [...paymentHistory, {
+                                                                date: today.toISOString(),
+                                                                amount: paymentAmount,
+                                                                status: 'paid',
+                                                                method: 'PIX'
+                                                            }];
+                                                            setPaymentHistory(newHistory);
+                                                            if (currentUser) {
+                                                                localStorage.setItem('ap_payment_history_' + currentUser.id, JSON.stringify(newHistory));
+                                                                localStorage.setItem('ap_payment_status_' + currentUser.id, JSON.stringify('paid'));
+                                                                localStorage.setItem('ap_payment_due_' + currentUser.id, JSON.stringify(nextMonth.toISOString()));
+                                                            } else {
+                                                                localStorage.setItem('ap_payment_history_', JSON.stringify(newHistory));
+                                                                localStorage.setItem('ap_payment_status_', JSON.stringify('paid'));
+                                                                localStorage.setItem('ap_payment_due_', JSON.stringify(nextMonth.toISOString()));
+                                                            }
+                                                            showToast('Pagamento confirmado! Próximo vencimento: ' + nextMonth.toLocaleDateString('pt-BR'), 'success');
+                                                        }} className="w-full py-3 rounded-xl bg-brandEmerald/10 border border-brandEmerald/20 text-brandEmerald font-bold text-xs tracking-wider hover:bg-brandEmerald/20 transition-all flex items-center justify-center gap-2">
                                                             <Icon name="check" className="w-4 h-4" />
                                                             CONFIRMAR PAGAMENTO
                                                         </button>
