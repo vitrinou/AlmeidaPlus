@@ -17,6 +17,9 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Adiciona coluna plan caso a tabela já exista (seguro rodar múltiplas vezes)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT DEFAULT 'youtube-premium';
+
 -- 2. TABELA DE PLATAFORMAS (STREAMINGS)
 CREATE TABLE IF NOT EXISTS platforms (
   id TEXT PRIMARY KEY,
@@ -84,10 +87,6 @@ VALUES
   ('531', 'Paramount+', 'https://image.tmdb.org/t/p/original/h5DcR0J2EESLitnhR8xLG1QymTE.jpg', 'https://paramountplus.com', 'paramount.almeida@gmail.com', 'AlmeidaSenha123', 9.00, true)
 ON CONFLICT DO NOTHING;
 
-<<<<<<< HEAD
--- 8. MIGRAÇÃO PARA ADICIONAR COLUNA plan (se você já criou a tabela antes)
--- ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT DEFAULT 'youtube-premium';
-=======
 -- 8. RLS POLICIES - Permite acesso anonimo (sem auth) às tabelas
 -- IMPORTANTE: Execute isso APÓS criar as tabelas, no SQL Editor do Supabase
 
@@ -97,26 +96,39 @@ ALTER TABLE user_favorites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
 
 -- Políticas para users: leitura, inserção, atualização e deleção para anon
+DROP POLICY IF EXISTS "anon_users_select" ON users;
+DROP POLICY IF EXISTS "anon_users_insert" ON users;
+DROP POLICY IF EXISTS "anon_users_update" ON users;
+DROP POLICY IF EXISTS "anon_users_delete" ON users;
 CREATE POLICY "anon_users_select" ON users FOR SELECT TO anon USING (true);
 CREATE POLICY "anon_users_insert" ON users FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon_users_update" ON users FOR UPDATE TO anon USING (true);
 CREATE POLICY "anon_users_delete" ON users FOR DELETE TO anon USING (true);
 
 -- Políticas para platforms
+DROP POLICY IF EXISTS "anon_platforms_select" ON platforms;
+DROP POLICY IF EXISTS "anon_platforms_insert" ON platforms;
+DROP POLICY IF EXISTS "anon_platforms_update" ON platforms;
+DROP POLICY IF EXISTS "anon_platforms_delete" ON platforms;
 CREATE POLICY "anon_platforms_select" ON platforms FOR SELECT TO anon USING (true);
 CREATE POLICY "anon_platforms_insert" ON platforms FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon_platforms_update" ON platforms FOR UPDATE TO anon USING (true);
 CREATE POLICY "anon_platforms_delete" ON platforms FOR DELETE TO anon USING (true);
 
 -- Políticas para user_favorites
+DROP POLICY IF EXISTS "anon_favorites_select" ON user_favorites;
+DROP POLICY IF EXISTS "anon_favorites_insert" ON user_favorites;
+DROP POLICY IF EXISTS "anon_favorites_delete" ON user_favorites;
 CREATE POLICY "anon_favorites_select" ON user_favorites FOR SELECT TO anon USING (true);
 CREATE POLICY "anon_favorites_insert" ON user_favorites FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon_favorites_delete" ON user_favorites FOR DELETE TO anon USING (true);
 
 -- Políticas para user_settings
+DROP POLICY IF EXISTS "anon_settings_select" ON user_settings;
+DROP POLICY IF EXISTS "anon_settings_insert" ON user_settings;
+DROP POLICY IF EXISTS "anon_settings_update" ON user_settings;
 CREATE POLICY "anon_settings_select" ON user_settings FOR SELECT TO anon USING (true);
 CREATE POLICY "anon_settings_insert" ON user_settings FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon_settings_update" ON user_settings FOR UPDATE TO anon USING (true);
->>>>>>> 8618b49d90a6349c791ce35037be17b7035d9474
 
 -- FEITO! Agora você pode usar o Supabase para sincronizar dados.
