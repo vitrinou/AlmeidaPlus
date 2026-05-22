@@ -706,7 +706,6 @@
             );
         };
 
-<<<<<<< HEAD
         // Planos de assinatura com links do Mercado Pago
         const PLANS = [
             { id: 'youtube-premium', name: 'YouTube Premium', link: 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=a764af9c64644f5694351e8f248aaac2' },
@@ -714,7 +713,7 @@
             { id: 'david-almeida', name: 'David - Almeida+', link: 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=2b45886a626f447d939a74e17d06f33f' },
             { id: 'pedro-almeida', name: 'Pedro - Almeida+', link: 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=cb5c1bb1f1a5464282be48fb2f9eb069' }
         ];
-=======
+
         // --- YOUTUBE PREMIUM PAGE ---
         const YouTubePage = ({ onBack }) => {
             const [searchQuery, setSearchQuery] = React.useState('');
@@ -859,7 +858,6 @@
                 </div>
             );
         };
->>>>>>> 8618b49d90a6349c791ce35037be17b7035d9474
 
         function App() {
             // --- GLOBAL STATE FROM SUPABASE ---
@@ -2279,33 +2277,6 @@
                                 {/*                      HUB (USER DASHBOARD)                */}
                                 {/* ======================================================== */}
                                 {currentRoute === 'hub' && (
-<<<<<<< HEAD
-                                    <main className="flex-1 flex flex-col gap-6 min-w-0">
-
-                                        {/* Lembrete Financeiro PIX */}
-                                        {currentUser && currentUser.dia_vencimento && (
-                                            (() => {
-                                                const today = new Date().getDate();
-                                                const due = currentUser.dia_vencimento;
-                                                const diff = due - today;
-                                                // Alert if due today, late, or within 3 days
-                                                const shouldAlert = (diff <= 3 && diff >= 0) || (today > due && today - due < 10);
-
-                                                if (!shouldAlert) return null;
-
-                                                return (
-                                                    <div onClick={() => setCurrentRoute('financeiro')} className="cursor-pointer glass-panel rounded-xl p-3 bg-gradient-to-r from-brandRose/20 to-red-900/20 border border-brandRose/30 flex items-center justify-between shadow-neon-glow hover:brightness-110 transition-all">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="p-2 rounded-full bg-brandRose/20 text-brandRose">
-                                                                <Icon name="support" className="w-5 h-5" />
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-xs font-bold text-white uppercase tracking-wider">Aviso de Fatura</p>
-                                                                <p className="text-[10px] text-slate-300">Seu acesso vence dia {due}. Clique aqui para pagar.</p>
-                                                            </div>
-                                                        </div>
-                                                        <Icon name="chevronRight" className="w-5 h-5 text-brandRose" />
-=======
                                     <main className="flex-1 flex flex-col gap-0 min-w-0 route-fade overflow-hidden px-4 md:px-6">
                                         {/* === HERO BANNER === */}
                                         {heroMovie && !searchQuery && (
@@ -2344,7 +2315,6 @@
                                                                 </span>
                                                             </>
                                                         )}
->>>>>>> 8618b49d90a6349c791ce35037be17b7035d9474
                                                     </div>
                                                     <p className="text-sm text-slate-300 leading-relaxed line-clamp-2 max-w-lg font-medium">
                                                         {heroMovie.overview}
@@ -3218,34 +3188,6 @@
                                     <main className="flex-1 flex flex-col gap-6 min-w-0 route-fade px-4 md:px-6 pb-8">
                                         {/* === PIX PAYMENT DASHBOARD === */}
                                         <div className="glass-panel rounded-2xl p-6 flex flex-col gap-4">
-<<<<<<< HEAD
-                                            <h2 className="text-2xl font-extrabold text-white tracking-tight">Painel Financeiro</h2>
-                                            <p className="text-sm text-slate-400">Gerencie sua assinatura por aqui.</p>
-
-                                            {currentUser && currentUser.dia_vencimento ? (
-                                                <div className="mt-6 flex flex-col items-center p-8 bg-black/30 border border-white/5 rounded-2xl max-w-lg mx-auto w-full relative overflow-hidden">
-                                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brandAccent to-brandViolet" />
-                                                    <div className="p-4 rounded-full bg-brandAccent/10 text-brandAccent border border-brandAccent/20 mb-4">
-                                                        <Icon name="settings" className="w-10 h-10" />
-                                                    </div>
-                                                    <h3 className="text-lg font-bold text-white mb-2">Sua Assinatura</h3>
-                                                    <p className="text-sm text-slate-300 mb-2">
-                                                        Plano: <span className="font-extrabold text-white">{PLANS.find(p => p.id === (currentUser.plan || 'youtube-premium'))?.name || 'YouTube Premium'}</span>
-                                                    </p>
-                                                    <p className="text-3xl font-black text-brandEmerald mb-6">
-                                                        R$ {(currentUser.valor_mensal || 25.00).toFixed(2).replace('.', ',')}
-                                                    </p>
-                                                    <a
-                                                        href={PLANS.find(p => p.id === (currentUser.plan || 'youtube-premium'))?.link || '#'}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="w-full max-w-xs py-4 rounded-xl bg-gradient-to-r from-brandAccent to-brandViolet text-white font-bold tracking-wider shadow-neon-glow hover:brightness-110 uppercase text-xs transition-all flex items-center justify-center gap-2"
-                                                    >
-                                                        <Icon name="copy" className="w-5 h-5" />
-                                                        Ir para Pagamento
-                                                    </a>
-                                                    <p className="text-[10px] text-slate-500 mt-3 text-center">Ao clicar, você será redirecionado ao Mercado Pago para realizar o pagamento da sua assinatura.</p>
-=======
                                             <div className="flex items-center justify-between">
                                                 <div>
                                                     <h2 className="text-2xl font-extrabold text-white tracking-tight">Financeiro</h2>
@@ -3352,7 +3294,6 @@
                                                             </div>
                                                         )}
                                                     </div>
->>>>>>> 8618b49d90a6349c791ce35037be17b7035d9474
                                                 </div>
                                             </div>
                                         </div>
