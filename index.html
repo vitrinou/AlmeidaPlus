@@ -791,7 +791,7 @@
                 try {
                     const saved = localStorage.getItem('ap_user_payment_amounts');
                     return saved ? JSON.parse(saved) : {};
-                } catch { return {}; }
+                } catch (e) { return {}; }
             });
             // Video player simulation state
             const [isPlaying, setIsPlaying] = useState(false);
