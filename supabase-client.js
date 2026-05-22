@@ -12,7 +12,6 @@ class SupabaseClient {
 
   async _fetch(method, table, data = null, filters = null, queryString = null) {
     try {
-      // Support legacy callers that pass query string in table param (e.g. "users?id=eq.123")
       let finalTable = table;
       let finalQueryString = queryString;
       const qIdx = table.indexOf('?');
@@ -22,16 +21,23 @@ class SupabaseClient {
         finalQueryString = finalQueryString ? `${finalQueryString}&${qs}` : qs;
       }
 
-      const response = await fetch(this.apiBase, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ method, table: finalTable, data, filters, queryString: finalQueryString })
-      });
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({ error: 'Request failed' }));
-        throw new Error(err.error || `HTTP ${response.status}`);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 5000);
+      try {
+        const response = await fetch(this.apiBase, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ method, table: finalTable, data, filters, queryString: finalQueryString }),
+          signal: controller.signal
+        });
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({ error: 'Request failed' }));
+          throw new Error(err.error || `HTTP ${response.status}`);
+        }
+        return await response.json();
+      } finally {
+        clearTimeout(timer);
       }
-      return await response.json();
     } catch (error) {
       console.error('Supabase request error:', error);
       return null;

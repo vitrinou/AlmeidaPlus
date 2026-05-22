@@ -269,14 +269,27 @@
         const API_PROXY = '/api';
 
         // TMDB helper — routes through Vercel proxy (keys are server-side only)
-        const tmdbFetch = async (endpoint, params = {}) => {
-            const response = await fetch(`${API_PROXY}/tmdb`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ endpoint, params: { ...params, language: LANG, region: REGION } })
-            });
-            if (!response.ok) throw new Error('TMDB request failed');
-            return response.json();
+        const tmdbCache = new Map();
+        const tmdbFetch = async (endpoint, params = {}, timeoutMs = 6000) => {
+            const cacheKey = endpoint + JSON.stringify(params);
+            const cached = tmdbCache.get(cacheKey);
+            if (cached && Date.now() - cached.ts < 120000) return cached.data;
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                const response = await fetch(`${API_PROXY}/tmdb`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ endpoint, params: { ...params, language: LANG, region: REGION } }),
+                    signal: controller.signal
+                });
+                if (!response.ok) throw new Error('TMDB request failed');
+                const data = await response.json();
+                tmdbCache.set(cacheKey, { data, ts: Date.now() });
+                return data;
+            } finally {
+                clearTimeout(timer);
+            }
         };
 
         // BrandLogo Vector component for safe premium visualization
@@ -982,30 +995,16 @@
                     };
                 };
 
-                const fallbackCache = {};
-                const getFallback = async () => {
+                const getFallback = (enrich = false) => {
                     const raw = activePlatformId === 'all'
                         ? uniqMovies(Object.values(FALLBACK_MOVIES).flat())
                         : FALLBACK_MOVIES[activePlatformId] || FALLBACK_MOVIES['119'] || [];
-                    const enriched = await Promise.all(raw.map(async (m) => {
-                        if (fallbackCache[m.id]) return fallbackCache[m.id];
-                        try {
-                            const data = await tmdbFetch('search/movie', { query: m.title, page: '1' });
-                            if (data.results?.[0]) {
-                                const tmdb = data.results[0];
-                                const result = {
-                                    ...m,
-                                    poster_path: tmdb.poster_path || null,
-                                    backdrop_path: tmdb.backdrop_path || m.backdrop_path,
-                                    vote_average: tmdb.vote_average || m.vote_average,
-                                };
-                                fallbackCache[m.id] = result;
-                                return result;
-                            }
-                        } catch (e) {}
-                        return m;
+                    if (!enrich) return raw;
+                    return raw.map(m => ({
+                        ...m,
+                        poster_path: m.poster_path || m.backdrop_path?.replace('w1280', 'w500'),
+                        backdrop_path: m.backdrop_path
                     }));
-                    return enriched;
                 };
 
                 const getProviderIds = () => {
@@ -1031,17 +1030,8 @@
 
                     try {
                         if (searchQuery.trim()) {
-                            const pages = [1, 2, 3];
-                            const responses = await Promise.all(pages.map(page =>
-                                tmdbFetch('search/movie', {
-                                    query: searchQuery.trim(),
-                                    page: String(page)
-                                })
-                            ));
-
-                            const formatted = uniqMovies(
-                                responses.flatMap(data => data.results || []).filter(m => m.backdrop_path || m.poster_path)
-                            ).map(formatMovie);
+                            const data = await tmdbFetch('search/movie', { query: searchQuery.trim(), page: '1' });
+                            const formatted = (data.results || []).filter(m => m.backdrop_path || m.poster_path).map(formatMovie);
 
                             if (!cancelled) {
                                 setMovies(formatted);
@@ -1057,15 +1047,22 @@
                             return;
                         }
 
+                        // Show fallback hero immediately while TMDB loads
+                        const fbRaw = getFallback();
+                        if (!cancelled && fbRaw.length) {
+                            setHeroMovie(formatMovie(fbRaw[0]));
+                            setMovies(fbRaw.slice(0, 20).map(formatMovie));
+                        }
+
                         const fetchSection = async (params = {}, fallbackIdx = 0) => {
                             try {
-                                const responses = await Promise.all([1, 2].map(page => fetchTmdbDiscover(providerIdsStr, params, page)));
-                                const results = uniqMovies(responses.flatMap(data => data.results || []).filter(m => m.backdrop_path || m.poster_path));
+                                const data = await fetchTmdbDiscover(providerIdsStr, params, 1);
+                                const results = (data.results || []).filter(m => m.backdrop_path || m.poster_path);
                                 if (results.length) return results.map(formatMovie);
                             } catch (err) {
                                 console.warn('TMDB fetchSection error:', err);
                             }
-                            const fb = await getFallback();
+                            const fb = getFallback(true);
                             const chunkSize = Math.max(1, Math.floor(fb.length / 8));
                             return fb.slice(fallbackIdx * chunkSize, (fallbackIdx + 1) * chunkSize).map(formatMovie);
                         };
@@ -1092,13 +1089,13 @@
                             setMoviesHorror(horror);
 
                             const allCatalog = uniqMovies([...trend, ...pop, ...act, ...sci, ...comedy, ...drama, ...family, ...horror]);
-                            setMovies(allCatalog);
-                            setHeroMovie(allCatalog[0] || null);
+                            setMovies(allCatalog.length ? allCatalog : getFallback(true).map(formatMovie));
+                            if (allCatalog.length) setHeroMovie(allCatalog[0]);
                         }
                     } catch (err) {
                         console.error('Catalog loading failed:', err);
                         if (!cancelled) {
-                            const fallback = (await getFallback()).map(formatMovie);
+                            const fallback = getFallback(true).map(formatMovie);
                             setMovies(fallback);
                             setMoviesPopular(fallback);
                             setHeroMovie(fallback[0] || null);
@@ -1512,6 +1509,16 @@
                         } catch { return null; }
                     })()
                 ]);
+                let ytKey = trailerVideo?.key || null;
+                if (!ytKey) {
+                    try {
+                        const searchData = await tmdbFetch('search/movie', { query: `${movie.title} trailer`, page: '1' });
+                        const externalIds = searchData.results?.[0]?.id
+                            ? await tmdbFetch(`movie/${searchData.results[0].id}/videos`, { language: 'en-US' })
+                            : null;
+                        ytKey = externalIds?.results?.find(v => v.site === 'YouTube' && v.key)?.key || null;
+                    } catch {}
+                }
                 const providerUrl = tmdbUrl || getMovieWatchUrl(movie, provider) || provider?.url || null;
                 if (!providerUrl) {
                     showToast('Nenhum link de streaming disponível para este título.', 'error');
@@ -1520,7 +1527,7 @@
                 const p = provider || (await getMovieProvider(movie));
                 setTrailerModal({
                     movie,
-                    youtubeKey: trailerVideo?.key || null,
+                    youtubeKey: ytKey,
                     providerUrl,
                     providerName: p?.name || 'Streaming'
                 });
@@ -3351,26 +3358,16 @@
                             <div className="w-full max-w-4xl flex flex-col gap-0" style={{ background: '#0a0a0d', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
                                 <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                                     <div className="flex flex-col">
-                                        <span style={{ fontSize: '11px', color: '#E54711', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em' }}>{trailerModal.youtubeKey ? 'Trailer Oficial' : 'Assistir'}</span>
+                                        <span style={{ fontSize: '11px', color: '#E54711', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em' }}>Trailer</span>
                                         <span style={{ fontSize: '16px', color: '#fff', fontWeight: 800, marginTop: '2px' }}>{trailerModal.movie.title}</span>
                                     </div>
                                     <button onClick={() => setTrailerModal(null)} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '8px', color: '#fff', cursor: 'pointer', lineHeight: 0 }}>
                                         <Icon name="x" className="w-5 h-5" />
                                     </button>
                                 </div>
-                                {trailerModal.youtubeKey ? (
-                                    <div style={{ position: 'relative', paddingBottom: '56.25%', background: '#000' }}>
-                                        <iframe src={`https://www.youtube.com/embed/${trailerModal.youtubeKey}?autoplay=1&rel=0&modestbranding=1&color=white`} title={`Trailer - ${trailerModal.movie.title}`} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} />
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center py-12 gap-4 px-6" style={{ background: 'linear-gradient(to bottom, rgba(8,10,15,0.9), rgba(8,10,15,1))' }}>
-                                        <div className="w-20 h-20 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #E54711, #FF6B35)', boxShadow: '0 8px 32px rgba(229,71,17,0.3)' }}>
-                                            <Icon name="play" className="w-10 h-10 text-white" style={{ fill: 'currentColor' }} />
-                                        </div>
-                                        <p className="text-lg font-bold text-white text-center">{trailerModal.movie.title}</p>
-                                        <p className="text-sm text-slate-400 text-center">Disponível em <span className="font-bold text-white">{trailerModal.providerName}</span></p>
-                                    </div>
-                                )}
+                                <div style={{ position: 'relative', paddingBottom: '56.25%', background: '#000' }}>
+                                    <iframe src={`https://www.youtube.com/embed/${trailerModal.youtubeKey || '?'}?autoplay=1&rel=0&modestbranding=1&color=white${!trailerModal.youtubeKey ? `&listType=search&list=${encodeURIComponent(trailerModal.movie.title + ' trailer oficial')}` : ''}`} title={`Trailer - ${trailerModal.movie.title}`} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} />
+                                </div>
                                 <div className="flex items-center justify-between px-5 py-4 gap-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                                     <p style={{ fontSize: '12px', color: 'rgba(180,180,180,0.7)' }}>Disponível em <span style={{ color: '#fff', fontWeight: 700 }}>{trailerModal.providerName}</span></p>
                                     <div className="flex items-center gap-3">
