@@ -640,6 +640,14 @@
             );
         };
 
+        // Planos de assinatura com links do Mercado Pago
+        const PLANS = [
+            { id: 'youtube-premium', name: 'YouTube Premium', link: 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=a764af9c64644f5694351e8f248aaac2' },
+            { id: 'rafael-almeida', name: 'Rafael - Almeida+', link: 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=81e148a4b1aa466397cfc1c40a2cc91f' },
+            { id: 'david-almeida', name: 'David - Almeida+', link: 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=2b45886a626f447d939a74e17d06f33f' },
+            { id: 'pedro-almeida', name: 'Pedro - Almeida+', link: 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=cb5c1bb1f1a5464282be48fb2f9eb069' }
+        ];
+
         function App() {
             // --- GLOBAL STATE FROM SUPABASE ---
             const [users, setUsers] = useState(() => {
@@ -742,6 +750,7 @@
             const [newUserName, setNewUserName] = useState('');
             const [newUserEmail, setNewUserEmail] = useState('');
             const [newUserPassword, setNewUserPassword] = useState('');
+            const [newUserPlan, setNewUserPlan] = useState('youtube-premium');
 
             // Collapsible Forms States
             const [showAddUser, setShowAddUser] = useState(false);
@@ -821,6 +830,12 @@
                 setPlatforms(prev => prev.map(p => ({
                     ...p,
                     id: p.id === '11' ? '307' : p.id
+                })));
+
+                // 3. Ensure all users have a plan field
+                setUsers(prev => prev.map(u => ({
+                    ...u,
+                    plan: u.plan || 'youtube-premium'
                 })));
             }, []);
 
@@ -1176,7 +1191,8 @@
                     role: 'user',
                     active: true,
                     platforms: [],
-                    is_first_login: true
+                    is_first_login: true,
+                    plan: newUserPlan
                 };
 
                 if (window.supabase) {
@@ -1195,6 +1211,7 @@
                 setNewUserName('');
                 setNewUserEmail('');
                 setNewUserPassword('');
+                setNewUserPlan('youtube-premium');
                 showToast('Amigo cadastrado com sucesso!', 'success');
             };
 
@@ -2011,7 +2028,7 @@
                                                             </div>
                                                             <div>
                                                                 <p className="text-xs font-bold text-white uppercase tracking-wider">Aviso de Fatura</p>
-                                                                <p className="text-[10px] text-slate-300">Seu acesso vence dia {due}. Clique aqui para ver o PIX.</p>
+                                                                <p className="text-[10px] text-slate-300">Seu acesso vence dia {due}. Clique aqui para pagar.</p>
                                                             </div>
                                                         </div>
                                                         <Icon name="chevronRight" className="w-5 h-5 text-brandRose" />
@@ -2425,6 +2442,25 @@
                                                                     </button>
                                                                 </div>
 
+                                                                {/* Plan Selector */}
+                                                                <div className="space-y-2">
+                                                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Plano de assinatura</p>
+                                                                    <select
+                                                                        value={u.plan || 'youtube-premium'}
+                                                                        onChange={(e) => {
+                                                                            const newPlan = e.target.value;
+                                                                            setUsers(prev => prev.map(us => us.id === u.id ? { ...us, plan: newPlan } : us));
+                                                                            if (window.supabase) window.supabase.updateUser(u.id, { plan: newPlan });
+                                                                            showToast(`Plano de ${u.name} atualizado!`, 'success');
+                                                                        }}
+                                                                        className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white text-xs focus:outline-none focus:border-brandAccent appearance-none cursor-pointer"
+                                                                    >
+                                                                        {PLANS.map(p => (
+                                                                            <option key={p.id} value={p.id} className="bg-brandDark text-white">{p.name}</option>
+                                                                        ))}
+                                                                    </select>
+                                                                </div>
+
                                                                 {/* Platforms Access List */}
                                                                 <div className="space-y-2">
                                                                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Streamings liberados</p>
@@ -2477,7 +2513,7 @@
                                                     </button>
 
                                                     {showAddUser && (
-                                                        <form onSubmit={handleAddUser} className="p-5 border-t border-white/5 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                                                        <form onSubmit={handleAddUser} className="p-5 border-t border-white/5 grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
                                                             <div>
                                                                 <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Nome do Amigo</label>
                                                                 <input
@@ -2511,9 +2547,21 @@
                                                                     className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white text-xs focus:outline-none focus:border-brandAccent"
                                                                 />
                                                             </div>
+                                                            <div>
+                                                                <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Plano</label>
+                                                                <select
+                                                                    value={newUserPlan}
+                                                                    onChange={(e) => setNewUserPlan(e.target.value)}
+                                                                    className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-white text-xs focus:outline-none focus:border-brandAccent appearance-none cursor-pointer"
+                                                                >
+                                                                    {PLANS.map(p => (
+                                                                        <option key={p.id} value={p.id} className="bg-brandDark text-white">{p.name}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
                                                             <button
                                                                 type="submit"
-                                                                className="sm:col-span-3 py-3 rounded-xl bg-brandAccent text-white font-bold text-xs uppercase tracking-wider hover:brightness-110 shadow-neon-blue active:scale-[0.99] transition-all"
+                                                                className="sm:col-span-4 py-3 rounded-xl bg-brandAccent text-white font-bold text-xs uppercase tracking-wider hover:brightness-110 shadow-neon-blue active:scale-[0.99] transition-all"
                                                             >
                                                                 CONFIRMAR CADASTRO DE AMIGO
                                                             </button>
@@ -2787,33 +2835,37 @@
                                 )}
 
                                 {/* ======================================================== */}
-                                {/*                     FINANCEIRO / PIX                     */}
+                                {/*                  FINANCEIRO / ASSINATURA                */}
                                 {/* ======================================================== */}
                                 {currentRoute === 'financeiro' && (
                                     <main className="flex-1 flex flex-col gap-6 min-w-0">
                                         <div className="glass-panel rounded-2xl p-6 flex flex-col gap-4">
                                             <h2 className="text-2xl font-extrabold text-white tracking-tight">Painel Financeiro</h2>
-                                            <p className="text-sm text-slate-400">Pague sua fatura via PIX para não perder o acesso.</p>
+                                            <p className="text-sm text-slate-400">Gerencie sua assinatura por aqui.</p>
 
                                             {currentUser && currentUser.dia_vencimento ? (
                                                 <div className="mt-6 flex flex-col items-center p-8 bg-black/30 border border-white/5 rounded-2xl max-w-lg mx-auto w-full relative overflow-hidden">
-                                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brandEmerald to-teal-500" />
-                                                    <h3 className="text-lg font-bold text-white mb-2">Fatura Mensal</h3>
+                                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brandAccent to-brandViolet" />
+                                                    <div className="p-4 rounded-full bg-brandAccent/10 text-brandAccent border border-brandAccent/20 mb-4">
+                                                        <Icon name="settings" className="w-10 h-10" />
+                                                    </div>
+                                                    <h3 className="text-lg font-bold text-white mb-2">Sua Assinatura</h3>
+                                                    <p className="text-sm text-slate-300 mb-2">
+                                                        Plano: <span className="font-extrabold text-white">{PLANS.find(p => p.id === (currentUser.plan || 'youtube-premium'))?.name || 'YouTube Premium'}</span>
+                                                    </p>
                                                     <p className="text-3xl font-black text-brandEmerald mb-6">
                                                         R$ {(currentUser.valor_mensal || 25.00).toFixed(2).replace('.', ',')}
                                                     </p>
-                                                    <div className="bg-white p-4 rounded-xl shadow-lg mb-6">
-                                                        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent('00020126440014br.gov.bcb.pix0122rodrigodevpro@gmail.com5204000053039865802BR5915RODRIGO ALMEIDA6006PALMAS62070503***6304EE88')}`} alt="QR Code PIX" className="w-48 h-48" />
-                                                    </div>
-
-                                                    <p className="text-xs text-slate-400 font-mono text-center mb-6 max-w-xs break-all select-all">
-                                                        00020126440014br.gov.bcb.pix0122rodrigodevpro@gmail.com5204000053039865802BR5915RODRIGO ALMEIDA6006PALMAS62070503***6304EE88
-                                                    </p>
-
-                                                    <button onClick={() => copyText('00020126440014br.gov.bcb.pix0122rodrigodevpro@gmail.com5204000053039865802BR5915RODRIGO ALMEIDA6006PALMAS62070503***6304EE88', 'Código PIX Copiado!')} className="w-full max-w-xs py-4 rounded-xl bg-gradient-to-r from-brandEmerald to-teal-500 text-white font-bold tracking-wider shadow-neon-glow hover:brightness-110 uppercase text-xs transition-all flex items-center justify-center gap-2">
+                                                    <a
+                                                        href={PLANS.find(p => p.id === (currentUser.plan || 'youtube-premium'))?.link || '#'}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="w-full max-w-xs py-4 rounded-xl bg-gradient-to-r from-brandAccent to-brandViolet text-white font-bold tracking-wider shadow-neon-glow hover:brightness-110 uppercase text-xs transition-all flex items-center justify-center gap-2"
+                                                    >
                                                         <Icon name="copy" className="w-5 h-5" />
-                                                        Copiar Código Copia e Cola
-                                                    </button>
+                                                        Ir para Pagamento
+                                                    </a>
+                                                    <p className="text-[10px] text-slate-500 mt-3 text-center">Ao clicar, você será redirecionado ao Mercado Pago para realizar o pagamento da sua assinatura.</p>
                                                 </div>
                                             ) : (
                                                 <div className="mt-6 p-8 bg-brandCard border border-brandBorder rounded-2xl text-center">

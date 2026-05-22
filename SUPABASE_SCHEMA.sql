@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
   active BOOLEAN DEFAULT true,
   is_first_login BOOLEAN DEFAULT true,
   platforms JSON DEFAULT '[]',
+  plan TEXT DEFAULT 'youtube-premium',
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -60,7 +61,7 @@ CREATE INDEX IF NOT EXISTS idx_user_favorites_user_id ON user_favorites(user_id)
 CREATE INDEX IF NOT EXISTS idx_user_settings_user_id ON user_settings(user_id);
 
 -- 6. INSERT DEFAULT ADMIN USER
-INSERT INTO users (email, name, password, role, active, is_first_login, platforms)
+INSERT INTO users (email, name, password, role, active, is_first_login, platforms, plan)
 VALUES (
   'allmeiids@gmail.com',
   'Almeida (Admin)',
@@ -68,7 +69,8 @@ VALUES (
   'admin',
   true,
   false,
-  '["8", "119", "337", "307", "1899", "531"]'
+  '["8", "119", "337", "307", "1899", "531"]',
+  'youtube-premium'
 ) ON CONFLICT DO NOTHING;
 
 -- 7. INSERT DEFAULT PLATFORMS
@@ -81,5 +83,8 @@ VALUES
   ('1899', 'HBO Max', 'https://image.tmdb.org/t/p/original/fksCUZ9QDWZMUwL2LgMtLckROUN.jpg', 'https://max.com', 'hbo.almeida@gmail.com', 'AlmeidaSenha123', 16.00, true),
   ('531', 'Paramount+', 'https://image.tmdb.org/t/p/original/h5DcR0J2EESLitnhR8xLG1QymTE.jpg', 'https://paramountplus.com', 'paramount.almeida@gmail.com', 'AlmeidaSenha123', 9.00, true)
 ON CONFLICT DO NOTHING;
+
+-- 8. MIGRAÇÃO PARA ADICIONAR COLUNA plan (se você já criou a tabela antes)
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT DEFAULT 'youtube-premium';
 
 -- FEITO! Agora você pode usar o Supabase para sincronizar dados.
