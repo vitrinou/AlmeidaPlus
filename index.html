@@ -786,6 +786,13 @@
             const [dontRemindCreds, setDontRemindCreds] = useState(() => {
                 return localStorage.getItem('ap_dont_remind_creds') === 'true';
             });
+            // Admin: per-user payment amount state
+            const [userPaymentAmounts, setUserPaymentAmounts] = useState(() => {
+                try {
+                    const saved = localStorage.getItem('ap_user_payment_amounts');
+                    return saved ? JSON.parse(saved) : {};
+                } catch { return {}; }
+            });
             // Video player simulation state
             const [isPlaying, setIsPlaying] = useState(false);
             const [playbackProgress, setPlaybackProgress] = useState(32.75);
@@ -1161,6 +1168,11 @@
                 }
             }, [continueWatching, currentUser]);
 
+            // --- USER PAYMENT AMOUNTS PERSISTENCE ---
+            useEffect(() => {
+                localStorage.setItem('ap_user_payment_amounts', JSON.stringify(userPaymentAmounts));
+            }, [userPaymentAmounts]);
+
             // --- PIX QR CODE GENERATION ---
             useEffect(() => {
                 if (currentRoute !== 'financeiro') return;
@@ -1170,7 +1182,7 @@
                 try {
                     if (typeof QRCode !== 'undefined') {
                         new QRCode(container, {
-                            text: '00020126440014br.gov.bcb.pix0122rodrigodevpro@gmail.com5204000053039865802BR5915RODRIGO ALMEIDA6006PALMAS62070503***6304EE88',
+                            text: pixPayload,
                             width: 180,
                             height: 180,
                             colorDark: '#080A0F',
@@ -1475,56 +1487,54 @@
             };
 
             // --- PAYMENT HELPERS ---
-            const markAsPaid = () => {
-                const today = new Date();
-                const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
-                setPaymentStatus('paid');
-                setPaymentDueDate(nextMonth.toISOString());
-                const newHistory = [...paymentHistory, {
-                    date: today.toISOString(),
-                    amount: paymentAmount,
-                    status: 'paid',
-                    method: 'PIX'
-                }];
-                setPaymentHistory(newHistory);
-                if (currentUser) {
-                    localStorage.setItem('ap_payment_history_' + currentUser.id, JSON.stringify(newHistory));
-                    localStorage.setItem('ap_payment_status_' + currentUser.id, JSON.stringify('paid'));
-                    localStorage.setItem('ap_payment_due_' + currentUser.id, JSON.stringify(nextMonth.toISOString()));
-                } else {
-                    localStorage.setItem('ap_payment_history_', JSON.stringify(newHistory));
-                    localStorage.setItem('ap_payment_status_', JSON.stringify('paid'));
-                    localStorage.setItem('ap_payment_due_', JSON.stringify(nextMonth.toISOString()));
+            // --- PIX BR CODE GENERATOR ---
+            const crc16 = (str) => {
+                let crc = 0xFFFF;
+                for (let i = 0; i < str.length; i++) {
+                    crc ^= str.charCodeAt(i) << 8;
+                    for (let j = 0; j < 8; j++) {
+                        if (crc & 0x8000) {
+                            crc = (crc << 1) ^ 0x1021;
+                        } else {
+                            crc = crc << 1;
+                        }
+                        crc &= 0xFFFF;
+                    }
                 }
-                showToast('Pagamento confirmado! Próximo vencimento: ' + nextMonth.toLocaleDateString('pt-BR'), 'success');
+                return crc.toString(16).toUpperCase().padStart(4, '0');
+            };
+            const generatePixPayload = (pixKey, name, city, amount) => {
+                const gui = '0014br.gov.bcb.pix';
+                const key = '01' + String(pixKey.length).padStart(2, '0') + pixKey;
+                const merchantAccInfo = '26' + String(gui.length + key.length).padStart(2, '0') + gui + key;
+                const mcc = '52040000';
+                const currency = '5303986';
+                const amountField = amount ? '54' + String(amount.toFixed(2).length).padStart(2, '0') + amount.toFixed(2) : '';
+                const country = '5802BR';
+                const merchantName = '59' + String(name.length).padStart(2, '0') + name;
+                const merchantCity = '60' + String(city.length).padStart(2, '0') + city;
+                const txId = '62070503***';
+                let payload = '000201' + merchantAccInfo + mcc + currency + amountField + country + merchantName + merchantCity + txId + '6304';
+                return payload + crc16(payload);
+            };
+            const PIX_KEY = 'allmeida.corp@gmail.com';
+            const pixPayload = React.useMemo(() => generatePixPayload(PIX_KEY, 'ALMEIDA PLUS', 'BRASIL', paymentAmount), [paymentAmount]);
+
+            const handleLogout = () => {
+                setCurrentUser(null);
+                setCurrentRoute('login');
+                localStorage.removeItem('ap_currentUser');
+                localStorage.removeItem('ap_mylist');
+                showToast('Sessão encerrada.', 'info');
             };
 
-            const downloadCalendarReminder = () => {
+            const openGoogleCalendar = () => {
                 if (!paymentDueDate) return;
                 const due = new Date(paymentDueDate);
-                const icsContent = [
-                    'BEGIN:VCALENDAR',
-                    'VERSION:2.0',
-                    'PRODID:-//ALMEIDA+//Pagamento//PT-BR',
-                    'BEGIN:VEVENT',
-                    'DTSTART:' + due.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z',
-                    'DTEND:' + due.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z',
-                    'SUMMARY:Pagamento ALMEIDA+ - R$ ' + paymentAmount.toFixed(2),
-                    'DESCRIPTION:Lembrete de pagamento da sua assinatura ALMEIDA+.',
-                    'BEGIN:VALARM',
-                    'TRIGGER:-P1D',
-                    'ACTION:DISPLAY',
-                    'DESCRIPTION:Lembrete: Pagamento ALMEIDA+ amanhã!',
-                    'END:VALARM',
-                    'END:VEVENT',
-                    'END:VCALENDAR'
-                ].join('\r\n');
-                const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = 'lembrete_almeidapay.ics';
-                link.click();
-                showToast('Arquivo de calendário baixado! Abra no Google Calendar ou Apple Calendar.', 'success');
+                const dateStr = due.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+                const url = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent('Pagamento ALMEIDA+ - R$ ' + paymentAmount.toFixed(2)) + '&dates=' + dateStr + '/' + dateStr + '&details=' + encodeURIComponent('Lembrete de pagamento da sua assinatura ALMEIDA+. Vencimento: ' + due.toLocaleDateString('pt-BR')) + '&trp=true&sf=true';
+                window.open(url, '_blank');
+                showToast('Google Calendar aberto! Clique em "Salvar" para ativar o lembrete.', 'success');
             };
 
             const requestNotificationReminder = () => {
@@ -2062,35 +2072,41 @@
                                         <span style={{ color: 'var(--logo-text-color)' }}>ALMEIDA</span>
                                         <span style={{ color: 'var(--logo-plus-color)' }} className="text-3xl">+</span>
                                     </div>
-                                    {/* Nav links - desktop only */}
-                                    <nav className="hidden md:flex items-center gap-1">
-                                        <button onClick={() => setCurrentRoute('hub')} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${currentRoute === 'hub' ? 'text-white bg-white/10' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                                            <Icon name="home" className="w-4 h-4" /> Início
-                                        </button>
-                                        <button onClick={() => setCurrentRoute('acessos')} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${currentRoute === 'acessos' ? 'text-white bg-white/10' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                                            <Icon name="key" className="w-4 h-4" /> Acessos
-                                        </button>
-                                        <button onClick={() => setCurrentRoute('financeiro')} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${currentRoute === 'financeiro' ? 'text-brandRose bg-brandRose/10' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                                            <Icon name="payments" className="w-4 h-4" /> PIX
-                                        </button>
-                                        {currentUser?.role === 'admin' && (
-                                            <button onClick={() => setCurrentRoute('admin')} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${currentRoute === 'admin' ? 'text-brandAccent bg-brandAccent/10' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                                                <Icon name="settings" className="w-4 h-4" /> Admin
+                                    {/* Nav links - desktop only - centralizado com larguras fixas */}
+                                    <nav className="hidden md:flex items-center justify-center flex-1 max-w-xl mx-auto gap-1">
+                                        {[
+                                            { route: 'hub', icon: 'home', label: 'Início' },
+                                            { route: 'acessos', icon: 'key', label: 'Acessos' },
+                                            { route: 'financeiro', icon: 'payments', label: 'PIX' },
+                                            ...(currentUser?.role === 'admin' ? [{ route: 'admin', icon: 'settings', label: 'Admin' }] : [])
+                                        ].map(item => (
+                                            <button key={item.route} onClick={() => setCurrentRoute(item.route)}
+                                                className={`flex items-center justify-center gap-1.5 min-w-[90px] px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+                                                    currentRoute === item.route
+                                                        ? item.route === 'financeiro' ? 'text-brandRose bg-brandRose/10' : item.route === 'admin' ? 'text-brandAccent bg-brandAccent/10' : 'text-white bg-white/10'
+                                                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                                }`}
+                                            >
+                                                <Icon name={item.icon} className="w-4 h-4 shrink-0" />
+                                                <span>{item.label}</span>
                                             </button>
-                                        )}
+                                        ))}
                                     </nav>
                                     {/* Right side: search + avatar */}
                                     <div className="flex items-center gap-3 shrink-0">
                                         {currentRoute === 'hub' && (
-                                            <div className="relative hidden md:block w-52 lg:w-72">
+                                            <div className="relative hidden md:block w-52">
                                                 <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Pesquisar filmes..." className="w-full pl-9 pr-4 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-brandAccent transition-all text-white placeholder-slate-500" />
                                                 <Icon name="search" className="w-4 h-4 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
                                             </div>
                                         )}
-                                        <div className="relative">
+                                        <div className="relative flex items-center gap-2">
                                             <button onClick={() => setCurrentRoute('settings')} className="relative" title="Meu Perfil">
                                                 {renderUserAvatar(currentUser, "w-8 h-8 rounded-xl ring-2 ring-white/[0.08] hover:ring-brandAccent/50 transition-all")}
                                                 <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#080A0F] bg-brandEmerald" />
+                                            </button>
+                                            <button onClick={handleLogout} className="hidden md:flex p-1.5 rounded-lg text-slate-500 hover:text-brandRose hover:bg-brandRose/5 transition-all" title="Sair">
+                                                <Icon name="logout" className="w-4 h-4" />
                                             </button>
                                         </div>
                                     </div>
@@ -2190,13 +2206,13 @@
                                             </div>
                                         )}
 
-                                        {/* === CONTINUE WATCHING === */}
+                                        {/* === QUERO VER (WATCHLIST) === */}
                                         {continueWatching.length > 0 && !searchQuery && (
                                             <div className="flex flex-col gap-3 px-4 md:px-0 py-4">
                                                 <div className="flex items-center justify-between">
                                                     <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2">
-                                                        <svg fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-4 h-4 text-brandAccent"><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" /></svg>
-                                                        Continuar Assistindo
+                                                        <svg fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-4 h-4 text-brandAccent"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                        Quero Ver
                                                     </h3>
                                                     <button onClick={() => { setContinueWatching([]); if (currentUser) localStorage.removeItem('ap_continue_watching_' + currentUser.id); showToast('Lista limpa', 'info'); }} className="text-[9px] text-slate-500 hover:text-brandRose transition-colors font-bold uppercase tracking-wider">
                                                         Limpar
@@ -2214,9 +2230,6 @@
                                                             }} style={{ scrollSnapAlign: 'start', flexShrink: 0 }} className="w-28 cursor-pointer group relative">
                                                                 <div style={{ aspectRatio: '2/3', background: '#111', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
                                                                     <img src={imgSrc} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" onError={e => { e.target.style.display = 'none'; }} />
-                                                                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '3px', background: 'rgba(255,255,255,0.1)' }}>
-                                                                        <div style={{ width: (item.progress || 0) + '%', height: '100%', background: '#E54711', borderRadius: '0 2px 0 0', transition: 'width 0.3s' }} />
-                                                                    </div>
                                                                 </div>
                                                                 <p style={{ fontSize: '10px', fontWeight: 700, color: '#fff', marginTop: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</p>
                                                             </div>
@@ -2598,6 +2611,22 @@
                                                                     <span className="text-[10px] text-slate-400 font-medium">Senha temporaria:</span>
                                                                     <span className="text-xs font-black text-white font-mono truncate">{u.password}</span>
                                                                 </div>
+
+                                                                {/* Monthly Value Input (Admin) */}
+                                                                <div className="pt-2 border-t border-white/5 flex items-center gap-2">
+                                                                    <span className="text-[9px] text-slate-400 uppercase tracking-widest font-bold shrink-0">Valor</span>
+                                                                    <div className="flex items-center gap-1 flex-1">
+                                                                        <span className="text-[10px] text-slate-500 font-bold">R$</span>
+                                                                        <input type="number" step="0.01" min="0" value={userPaymentAmounts[u.id] ?? 25.00} onChange={(e) => setUserPaymentAmounts(prev => ({ ...prev, [u.id]: parseFloat(e.target.value) || 0 }))} className="w-full px-2 py-1 rounded-lg bg-black/40 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-brandAccent" />
+                                                                    </div>
+                                                                    <button onClick={() => {
+                                                                        const val = userPaymentAmounts[u.id] ?? 25.00;
+                                                                        localStorage.setItem('ap_payment_amount_' + u.id, JSON.stringify(val));
+                                                                        showToast('Valor de R$ ' + val.toFixed(2) + ' salvo para ' + u.name, 'success');
+                                                                    }} className="px-2.5 py-1 rounded-lg bg-brandAccent/10 border border-brandAccent/20 text-brandAccent text-[9px] font-bold hover:bg-brandAccent/20 transition whitespace-nowrap">
+                                                                        Salvar
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                         );
                                                     })}
@@ -2967,7 +2996,7 @@
                                                         Escaneie o QR Code ou copie o código PIX abaixo
                                                     </p>
                                                     <div className="w-full flex flex-col gap-2">
-                                                        <button onClick={() => copyText('00020126440014br.gov.bcb.pix0122rodrigodevpro@gmail.com5204000053039865802BR5915RODRIGO ALMEIDA6006PALMAS62070503***6304EE88', 'Código PIX copiado!')} className="w-full py-3 rounded-xl bg-gradient-to-r from-brandAccent to-brandRose text-white font-bold text-xs tracking-wider hover:brightness-110 transition-all flex items-center justify-center gap-2">
+                                                        <button onClick={() => copyText(pixPayload, 'Código PIX copiado!')} className="w-full py-3 rounded-xl bg-gradient-to-r from-brandAccent to-brandRose text-white font-bold text-xs tracking-wider hover:brightness-110 transition-all flex items-center justify-center gap-2">
                                                             <Icon name="copy" className="w-4 h-4" />
                                                             COPIAR PIX
                                                         </button>
@@ -2987,9 +3016,9 @@
                                                             Lembretes
                                                         </h3>
                                                         <div className="flex flex-col gap-2">
-                                                            <button onClick={downloadCalendarReminder} className="w-full py-2.5 px-4 rounded-xl bg-white/5 border border-white/10 text-slate-300 text-xs font-bold hover:bg-white/10 transition-all flex items-center justify-center gap-2">
+                                                            <button onClick={openGoogleCalendar} className="w-full py-2.5 px-4 rounded-xl bg-white/5 border border-white/10 text-slate-300 text-xs font-bold hover:bg-white/10 transition-all flex items-center justify-center gap-2">
                                                                 <svg fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>
-                                                                Adicionar ao Calendário (.ics)
+                                                                Adicionar no Google Calendar
                                                             </button>
                                                             <button onClick={requestNotificationReminder} className="w-full py-2.5 px-4 rounded-xl bg-white/5 border border-white/10 text-slate-300 text-xs font-bold hover:bg-white/10 transition-all flex items-center justify-center gap-2">
                                                                 <svg fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
@@ -3086,12 +3115,12 @@
                                                             const newCW = [...continueWatching, { id: selectedMovie.id, title: selectedMovie.title, poster_path: selectedMovie.poster_path, backdrop_path: selectedMovie.backdrop_path, addedAt: new Date().toISOString(), progress: 0 }];
                                                             setContinueWatching(newCW);
                                                             if (currentUser) localStorage.setItem('ap_continue_watching_' + currentUser.id, JSON.stringify(newCW));
-                                                            showToast('Adicionado a "Continuar Assistindo"', 'success');
+                                                            showToast('Adicionado a "Quero Ver"', 'success');
                                                         } else {
                                                             showToast('Já está na sua lista', 'info');
                                                         }
                                                     }} className="py-2.5 px-4 rounded-xl bg-brandAccent/10 border border-brandAccent/20 text-brandAccent text-[10px] font-bold hover:bg-brandAccent/20 transition-all flex items-center justify-center gap-1.5">
-                                                        <Icon name="play" className="w-3.5 h-3.5" /> Continuar
+                                                        <Icon name="play" className="w-3.5 h-3.5" /> Quero Ver
                                                     </button>
 
                                                     {/* Credentials Copy Button */}
@@ -3286,6 +3315,15 @@
                                                     {isSavingSettings ? 'Salvando...' : 'Salvar Alterações'}
                                                 </button>
                                             </div>
+                                        </div>
+
+                                        {/* Logout */}
+                                        <div className="border-t border-white/5 pt-6">
+                                            <button onClick={handleLogout} className="w-full py-3.5 rounded-xl bg-brandRose/10 border border-brandRose/20 text-brandRose font-bold text-xs tracking-wider hover:bg-brandRose/20 transition-all flex items-center justify-center gap-2">
+                                                <Icon name="logout" className="w-4 h-4" />
+                                                ENCERRAR SESSÃO
+                                            </button>
+                                            <p className="text-[9px] text-slate-600 text-center mt-2">Você precisará fazer login novamente.</p>
                                         </div>
                                     </div>
                                 )}
