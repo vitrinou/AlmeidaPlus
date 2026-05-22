@@ -1515,8 +1515,7 @@
             };
 
             const openGoogleCalendar = () => {
-                if (!paymentDueDate) return;
-                const due = new Date(paymentDueDate);
+                const due = paymentDueDate ? new Date(paymentDueDate) : new Date(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate());
                 const dateStr = due.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
                 const url = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent('Pagamento ALMEIDA+ - R$ ' + paymentAmount.toFixed(2)) + '&dates=' + dateStr + '/' + dateStr + '&details=' + encodeURIComponent('Lembrete de pagamento da sua assinatura ALMEIDA+. Vencimento: ' + due.toLocaleDateString('pt-BR')) + '&trp=true&sf=true';
                 window.open(url, '_blank');
