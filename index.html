@@ -1286,20 +1286,22 @@
                     }
                 }
 
-                // Fallback: Se 'Todos os canais' está selecionado, distribui aleatoriamente
-                if (activePlatformId === 'all') {
-                    const permittedPlatforms = currentUser
-                        ? (currentUser.role === 'admin'
-                            ? platforms.filter(p => p.enabled)
-                            : platforms.filter(p => p.enabled && currentUser.platforms.includes(p.id)))
-                        : [];
-                    if (permittedPlatforms.length > 0) {
-                        const index = Math.abs(movie.id) % permittedPlatforms.length;
-                        return permittedPlatforms[index];
-                    }
-                }
-
                 return null;
+            };
+
+            const getMovieWatchUrl = (movie, provider) => {
+                if (!provider) return null;
+                if (movie.watchUrl) return movie.watchUrl;
+                const name = provider.name.toLowerCase();
+                const query = encodeURIComponent(movie.title);
+                if (name.includes('netflix')) return `https://www.netflix.com/search?q=${query}`;
+                if (name.includes('prime') || name.includes('amazon')) return `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${query}`;
+                if (name.includes('hbo') || name.includes('max')) return `https://play.hbomax.com/search?q=${query}`;
+                if (name.includes('disney')) return `https://www.disneyplus.com/search?q=${query}`;
+                if (name.includes('globoplay')) return `https://globoplay.globo.com/busca/?q=${query}`;
+                if (name.includes('paramount')) return `https://www.paramountplus.com/search/?q=${query}`;
+                if (name.includes('apple')) return `https://tv.apple.com/search?term=${query}`;
+                return provider.url;
             };
 
             // --- ADMIN ACTIONS ---
@@ -1587,24 +1589,25 @@
                         trailer = data3.results?.find(v => v.site === 'YouTube' && v.key);
                     }
                     if (trailer?.key) {
-                        setTrailerModal({ movie, youtubeKey: trailer.key, providerUrl: provider?.url || null, providerName: provider?.name || 'Streaming' });
+                        setTrailerModal({ movie, youtubeKey: trailer.key, providerUrl: getMovieWatchUrl(movie, provider) || provider?.url || null, providerName: provider?.name || 'Streaming' });
                     } else if (provider?.url) {
-                        window.open(provider.url, '_blank');
+                        window.open(getMovieWatchUrl(movie, provider) || provider.url, '_blank');
                     } else {
                         showToast('Nenhum trailer encontrado para este título.', 'error');
                     }
                 } catch (err) {
-                    if (provider?.url) window.open(provider.url, '_blank');
+                    if (provider?.url) window.open(getMovieWatchUrl(movie, provider) || provider.url, '_blank');
                 }
             };
 
             // --- HANDLE "ASSISTIR NA PLATAFORMA" (mostra credenciais) ---
-            const handleWatchOnPlatform = (provider, returnUrl) => {
+            const handleWatchOnPlatform = (provider, returnUrl, movie = null) => {
+                const watchUrl = (movie ? getMovieWatchUrl(movie, provider) : null) || returnUrl || provider?.url;
                 if (dontRemindCreds || !provider || !provider.email || !provider.password) {
-                    if (provider?.url) window.open(provider.url, '_blank');
+                    if (watchUrl) window.open(watchUrl, '_blank');
                     return;
                 }
-                setShowCredsModal({ provider, returnUrl });
+                setShowCredsModal({ provider, returnUrl: watchUrl });
             };
 
             // Finance widgets removed for compliance and simplicity
@@ -3333,7 +3336,7 @@
                                     <div className="flex items-center gap-3">
                                         <button onClick={() => setTrailerModal(null)} style={{ padding: '10px 18px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#ccc', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>Fechar</button>
                                         {trailerModal.providerUrl && (
-                                            <button onClick={() => { const p = getMovieProvider(trailerModal.movie); handleWatchOnPlatform(p, trailerModal.providerUrl); }} style={{ padding: '10px 22px', borderRadius: '8px', background: '#E54711', color: '#fff', fontSize: '12px', fontWeight: 800, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '7px', boxShadow: '0 4px 16px rgba(229,71,17,0.35)' }}>
+                                            <button onClick={() => { const p = getMovieProvider(trailerModal.movie); handleWatchOnPlatform(p, trailerModal.providerUrl, trailerModal.movie); }} style={{ padding: '10px 22px', borderRadius: '8px', background: '#E54711', color: '#fff', fontSize: '12px', fontWeight: 800, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '7px', boxShadow: '0 4px 16px rgba(229,71,17,0.35)' }}>
                                                 <Icon name="play" className="w-4 h-4" style={{ fill: 'currentColor' }} />ASSISTIR EM {trailerModal.providerName.toUpperCase()}
                                             </button>
                                         )}
