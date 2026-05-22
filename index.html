@@ -25,8 +25,8 @@
     <!-- Supabase Client -->
     <script src="./supabase-client.js"></script>
 
-    <!-- QRCode.js -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <!-- QRCode.js (davidshimjs via cdnjs) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <script>
         tailwind.config = {
@@ -1202,7 +1202,7 @@
                 } catch(e) {
                     console.error('QR Code generation error:', e);
                 }
-            }, [currentRoute]);
+            }, [currentRoute, pixPayload]);
 
             // --- TRIGGER TOAST ---
             const showToast = (message, type = 'success') => {
@@ -2075,14 +2075,14 @@
 
                             {/* === TOP NAVIGATION BAR === */}
                             <header className="sticky top-0 z-40 w-full bg-[#080A0F]/95 backdrop-blur-xl border-b border-white/[0.06]">
-                                <div className="flex items-center justify-between px-4 md:px-6 h-14 gap-4">
+                                <div className="grid grid-cols-3 items-center px-4 md:px-6 h-14 gap-4">
                                     {/* Logo */}
-                                    <div className="flex items-center gap-0.5 font-black text-2xl tracking-tight shrink-0">
+                                    <div className="flex items-center gap-0.5 font-black text-2xl tracking-tight">
                                         <span style={{ color: 'var(--logo-text-color)' }}>ALMEIDA</span>
                                         <span style={{ color: 'var(--logo-plus-color)' }} className="text-3xl">+</span>
                                     </div>
-                                    {/* Nav links - desktop only - centralizado com larguras fixas */}
-                                    <nav className="hidden md:flex items-center justify-center flex-1 max-w-xl mx-auto gap-1">
+                                    {/* Nav links - desktop only - centralizado */}
+                                    <nav className="hidden md:flex items-center justify-center gap-1">
                                         {[
                                             { route: 'hub', icon: 'home', label: 'Início' },
                                             { route: 'acessos', icon: 'key', label: 'Acessos' },
@@ -2102,7 +2102,7 @@
                                         ))}
                                     </nav>
                                     {/* Right side: search + avatar */}
-                                    <div className="flex items-center gap-3 shrink-0">
+                                    <div className="flex items-center justify-end gap-3">
                                         {currentRoute === 'hub' && (
                                             <div className="relative hidden md:block w-52">
                                                 <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Pesquisar filmes..." className="w-full pl-9 pr-4 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-brandAccent transition-all text-white placeholder-slate-500" />
