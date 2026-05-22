@@ -600,8 +600,18 @@
 
             // --- VIEW ROUTING STATE ---
             // 'login' | 'hub' | 'admin'
-            const [currentRoute, setCurrentRoute] = useState('login');
-            const [currentUser, setCurrentUser] = useState(null);
+            const [currentUser, setCurrentUser] = useState(() => {
+                const saved = localStorage.getItem('ap_currentUser');
+                return saved ? JSON.parse(saved) : null;
+            });
+            const [currentRoute, setCurrentRoute] = useState(() => {
+                const saved = localStorage.getItem('ap_currentUser');
+                if (saved) {
+                    const user = JSON.parse(saved);
+                    return user.role === 'admin' ? 'admin' : 'hub';
+                }
+                return 'login';
+            });
 
             // --- COLLAPSIBLE SIDEBAR STATE ---
             const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -963,6 +973,7 @@
                 }
 
                 setCurrentUser(found);
+                localStorage.setItem('ap_currentUser', JSON.stringify(found));
                 if (found.role === 'admin') {
                     setCurrentRoute('admin');
                     showToast('Olá Almeida, painel administrativo desbloqueado!', 'success');
@@ -1304,74 +1315,197 @@
                     {/*             1. CINEMATIC LOGIN EXPERIENCE                */}
                     {/* ======================================================== */}
                     {currentRoute === 'login' && (
-                        <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center bg-[#05070d]">
-                            <div className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-40" style={{ backgroundImage: 'url(https://image.tmdb.org/t/p/original/tElnmtQ6snFIgicWEP67FACtWS0.jpg)', filter: 'blur(4px) brightness(0.6)' }} />
-                            <div className="absolute inset-0 z-0">
-                                <div className="absolute inset-0 bg-gradient-to-t from-brandDark via-brandDark/80 to-brandDark/40" />
-                                <div className="absolute inset-0 bg-gradient-to-r from-brandDark via-brandDark/95 to-transparent md:w-2/3" />
-                            </div>
+                        <div className="relative min-h-screen w-full overflow-hidden flex flex-col bg-black">
 
-                            {/* LEFT SIDE: Clean dark card for Login */}
-                            <div className="relative z-20 w-full min-h-screen flex flex-col justify-center items-center px-4 py-10 md:px-8">
-                                <div className="hidden" />
-
-                                <div className="w-full max-w-md bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl p-8 md:p-10 shadow-2xl relative overflow-hidden">
-                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brandAccent to-brandViolet" />
-
-                                    {/* App Branding (Only ONE Logo, CSS Styled) */}
-                                    <div className="flex flex-col items-center mb-8 select-none">
-                                        <div className="flex items-center gap-1 font-sans text-4xl font-extrabold tracking-tight mb-2 drop-shadow-[0_0_15px_rgba(59,130,246,0.3)]">
-                                            <span style={{ color: 'var(--logo-text-color)' }} className="font-black">
-                                                ALMEIDA
-                                            </span>
-                                            <span style={{ color: 'var(--logo-plus-color)' }} className="drop-shadow-[0_0_8px_rgba(59,130,246,0.5)] font-black text-5xl">+</span>
-                                        </div>
-                                        <p className="text-[10px] text-slate-400 text-center tracking-widest uppercase font-semibold">Central de Gerenciamento Unificado</p>
-                                    </div>
-
-                                    {/* Secure Credentials Login */}
-                                    <form onSubmit={handleLogin} className="space-y-5">
-                                        <div>
-                                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">E-mail</label>
-                                            <input
-                                                type="email"
-                                                required
-                                                value={loginEmail}
-                                                onChange={(e) => setLoginEmail(e.target.value)}
-                                                placeholder="Seu E-mail"
-                                                className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 text-white placeholder-slate-600 focus:outline-none focus:border-brandAccent transition-all duration-200 text-sm"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Senha</label>
-                                            <input
-                                                type="password"
-                                                required
-                                                value={loginPassword}
-                                                onChange={(e) => setLoginPassword(e.target.value)}
-                                                placeholder="Sua senha"
-                                                className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 text-white placeholder-slate-600 focus:outline-none focus:border-brandAccent transition-all duration-200 text-sm"
-                                            />
-                                        </div>
-
-                                        {loginError && (
-                                            <div className="p-3.5 rounded-xl bg-brandRose/10 border border-brandRose/20 text-brandRose text-xs font-semibold">
-                                                {loginError}
+                            {/* === CAMADA 1: CATÁLOGO ANIMADO (fundo) === */}
+                            <div className="absolute inset-0 z-0 opacity-40 select-none pointer-events-none">
+                                <div
+                                    className="absolute inset-0 z-10"
+                                    style={{
+                                        background: 'linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 30%, rgba(0,0,0,0.3) 70%, rgba(0,0,0,0.9) 100%)'
+                                    }}
+                                />
+                                <div className="flex flex-col gap-3 pt-4 catalog-fade-mask">
+                                    {loginMarqueeRows.map((row, rowIndex) => (
+                                        <div key={rowIndex} className="overflow-hidden">
+                                            <div className={rowIndex % 2 === 0 ? 'animate-marquee-left' : 'animate-marquee-right'}>
+                                                {row.map((movie, i) => (
+                                                    <div
+                                                        key={`${movie.id}-${i}`}
+                                                        className="flex-shrink-0 w-[110px] h-[165px] rounded-md overflow-hidden poster-card"
+                                                        style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.6)' }}
+                                                    >
+                                                        {movie.poster_path ? (
+                                                            <img
+                                                                src={`https://image.tmdb.org/t/p/w200${movie.poster_path}`}
+                                                                alt={movie.title || ''}
+                                                                className="w-full h-full object-cover"
+                                                                loading="lazy"
+                                                                draggable="false"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center bg-slate-800 text-slate-600 text-[10px] text-center px-2">
+                                                                {movie.title}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
                                             </div>
-                                        )}
-
-                                        <button
-                                            type="submit"
-                                            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-brandAccent to-brandViolet text-white font-bold text-sm tracking-wide shadow-lg hover:shadow-neon-violet hover:brightness-110 active:scale-[0.98] transition-all duration-200"
-                                        >
-                                            Entrar na Plataforma
-                                        </button>
-                                    </form>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 
+                            {/* === CAMADA 2: OVERLAY GRADIENTE CENTRAL === */}
+                            <div
+                                className="absolute inset-0 z-10 pointer-events-none"
+                                style={{
+                                    background: 'linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.85) 100%)'
+                                }}
+                            />
 
+                            {/* === CAMADA 3: CONTEÚDO (logo + headline + form) === */}
+                            <div className="relative z-20 flex flex-col min-h-screen">
+
+                                {/* NAVBAR: Logo topo esquerdo */}
+                                <div className="flex items-center justify-between px-6 md:px-12 py-5">
+                                    <div className="flex items-center gap-0.5 select-none">
+                                        <span
+                                            className="font-black tracking-tighter leading-none"
+                                            style={{
+                                                fontFamily: 'Outfit, sans-serif',
+                                                fontSize: '2rem',
+                                                color: 'var(--logo-text-color)',
+                                                textShadow: '0 2px 12px rgba(0,0,0,0.5)'
+                                            }}
+                                        >
+                                            ALMEIDA
+                                        </span>
+                                        <span
+                                            className="font-black leading-none"
+                                            style={{
+                                                fontFamily: 'Outfit, sans-serif',
+                                                fontSize: '2.4rem',
+                                                color: 'var(--logo-plus-color)',
+                                                textShadow: '0 0 16px rgba(229,71,17,0.6)'
+                                            }}
+                                        >
+                                            +
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* HERO: Centralizado verticalmente */}
+                                <div className="flex-1 flex flex-col items-center justify-center px-4 text-center pb-16">
+
+                                    <h1
+                                        className="font-black text-white leading-[1.1] mb-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+                                        style={{
+                                            fontFamily: 'Outfit, sans-serif',
+                                            fontSize: 'clamp(1.8rem, 5vw, 3.2rem)',
+                                            maxWidth: '680px'
+                                        }}
+                                    >
+                                        Streamings da família,<br />tudo em um só lugar.
+                                    </h1>
+
+                                    <p
+                                        className="text-white/80 mb-8 font-medium drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]"
+                                        style={{
+                                            fontFamily: 'Outfit, sans-serif',
+                                            fontSize: 'clamp(0.95rem, 2vw, 1.15rem)',
+                                            maxWidth: '480px'
+                                        }}
+                                    >
+                                        Gerencie contas, senhas e acessos com segurança. Entre para começar.
+                                    </p>
+
+                                    <div
+                                        className="w-full rounded-2xl p-8 md:p-10"
+                                        style={{
+                                            maxWidth: '440px',
+                                            background: 'rgba(0, 0, 0, 0.78)',
+                                            backdropFilter: 'blur(12px)',
+                                            border: '1px solid rgba(255,255,255,0.08)'
+                                        }}
+                                    >
+                                        <form onSubmit={handleLogin} className="space-y-4">
+                                            <div>
+                                                <input
+                                                    type="email"
+                                                    required
+                                                    value={loginEmail}
+                                                    onChange={(e) => setLoginEmail(e.target.value)}
+                                                    placeholder="E-mail"
+                                                    className="w-full px-4 py-4 rounded-md text-white text-base focus:outline-none transition-all duration-200"
+                                                    style={{
+                                                        background: 'rgba(51, 51, 51, 0.9)',
+                                                        border: '1px solid rgba(255,255,255,0.15)',
+                                                        fontFamily: 'Outfit, sans-serif'
+                                                    }}
+                                                    onFocus={e => { e.target.style.borderColor = 'rgba(255,255,255,0.4)'; }}
+                                                    onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.15)'; }}
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <input
+                                                    type="password"
+                                                    required
+                                                    value={loginPassword}
+                                                    onChange={(e) => setLoginPassword(e.target.value)}
+                                                    placeholder="Senha"
+                                                    className="w-full px-4 py-4 rounded-md text-white text-base focus:outline-none transition-all duration-200"
+                                                    style={{
+                                                        background: 'rgba(51, 51, 51, 0.9)',
+                                                        border: '1px solid rgba(255,255,255,0.15)',
+                                                        fontFamily: 'Outfit, sans-serif'
+                                                    }}
+                                                    onFocus={e => { e.target.style.borderColor = 'rgba(255,255,255,0.4)'; }}
+                                                    onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.15)'; }}
+                                                />
+                                            </div>
+
+                                            {loginError && (
+                                                <div
+                                                    className="p-3 rounded-md text-sm font-semibold"
+                                                    style={{
+                                                        background: 'rgba(244, 63, 94, 0.12)',
+                                                        border: '1px solid rgba(244, 63, 94, 0.3)',
+                                                        color: '#F43F5E',
+                                                        fontFamily: 'Outfit, sans-serif'
+                                                    }}
+                                                >
+                                                    {loginError}
+                                                </div>
+                                            )}
+
+                                            <button
+                                                type="submit"
+                                                className="w-full py-4 rounded-md font-bold text-white text-base tracking-wide transition-all duration-200 active:scale-[0.98]"
+                                                style={{
+                                                    background: 'var(--logo-plus-color)',
+                                                    fontFamily: 'Outfit, sans-serif',
+                                                    boxShadow: '0 4px 24px rgba(229,71,17,0.35)'
+                                                }}
+                                                onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.12)'; }}
+                                                onMouseLeave={e => { e.currentTarget.style.filter = 'brightness(1)'; }}
+                                            >
+                                                Entrar
+                                            </button>
+                                        </form>
+
+                                        <p
+                                            className="text-center mt-5 text-xs"
+                                            style={{ color: 'rgba(150,150,150,0.8)', fontFamily: 'Outfit, sans-serif' }}
+                                        >
+                                            Acesso restrito aos membros da família Almeida.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="w-full h-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
+                            </div>
                         </div>
                     )}
 
@@ -1585,6 +1719,7 @@
 
                                                     setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
                                                     setCurrentUser(updatedUser);
+                                                    localStorage.setItem('ap_currentUser', JSON.stringify(updatedUser));
                                                     showToast('Perfil configurado com sucesso!', 'success');
                                                 }}
                                                 className="w-full py-3.5 rounded-xl bg-gradient-to-r from-brandAccent to-brandViolet text-white font-bold text-xs tracking-wider shadow-lg hover:shadow-neon-violet hover:brightness-110 active:scale-[0.98] transition-all"
@@ -1735,6 +1870,7 @@
                                         <button
                                             onClick={() => {
                                                 setCurrentUser(null);
+                                                localStorage.removeItem('ap_currentUser');
                                                 setCurrentRoute('login');
                                                 showToast('Logout realizado.', 'info');
                                             }}
@@ -1803,14 +1939,13 @@
                                                         setActivePlatformId('all');
                                                         setIsPlaying(false);
                                                     }}
-                                                    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 border whitespace-nowrap ${
+                                                    className={`flex items-center gap-2 px-5 py-3 rounded-full transition-all duration-300 border whitespace-nowrap ${
                                                         activePlatformId === 'all'
                                                             ? 'bg-white/10 border-white/20 text-white shadow-md'
                                                             : 'bg-transparent border-white/5 text-slate-400 hover:bg-white/5 hover:text-white'
                                                     }`}
                                                 >
-                                                    <Icon name="grid" className="w-4 h-4" />
-                                                    <span className="text-[11px] font-bold tracking-wider uppercase">Todos</span>
+                                                    <Icon name="grid" className="w-5 h-5" />
                                                 </button>
 
                                                 {platforms.filter(p => p.enabled).map(p => {
@@ -1824,7 +1959,7 @@
                                                                 setActivePlatformId(p.id);
                                                                 setIsPlaying(false);
                                                             }}
-                                                            className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 border whitespace-nowrap ${
+                                                            className={`flex items-center gap-2 px-5 py-3 rounded-full transition-all duration-300 border whitespace-nowrap ${
                                                                 isActive
                                                                     ? `bg-gradient-to-r ${p.color} border-white/20 text-white shadow-md`
                                                                     : 'bg-transparent border-white/5 text-slate-400 hover:bg-white/5 hover:text-white'
@@ -1836,8 +1971,7 @@
                                                                 </div>
                                                             )}
 
-                                                            <SafeLogo logo={p.logo} name={p.name} className="h-4 object-contain rounded" />
-                                                            <span className="text-[11px] font-bold tracking-wider uppercase">{p.name}</span>
+                                                            <SafeLogo logo={p.logo} name={p.name} className="h-10 max-w-[100px] object-contain rounded" />
                                                         </button>
                                                     );
                                                 })}
@@ -2831,6 +2965,7 @@
                                                                 const res = await window.supabase.updateUser(currentUser.id, updates);
                                                                 if (res) {
                                                                     setCurrentUser(res);
+                                                                    localStorage.setItem('ap_currentUser', JSON.stringify(res));
                                                                     const updatedUsers = users.map(u => u.id === res.id ? res : u);
                                                                     setUsers(updatedUsers);
                                                                     localStorage.setItem('ap_users', JSON.stringify(updatedUsers));
