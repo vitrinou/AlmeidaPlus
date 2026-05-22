@@ -706,6 +706,151 @@
             );
         };
 
+        // --- YOUTUBE PREMIUM PAGE ---
+        const YouTubePage = ({ onBack }) => {
+            const [searchQuery, setSearchQuery] = React.useState('');
+            const [searchInput, setSearchInput] = React.useState('');
+
+            const handleSearch = (e) => {
+                e.preventDefault();
+                if (!searchInput.trim()) return;
+                setSearchQuery(searchInput.trim());
+            };
+
+            const quickSearches = [
+                { label: '🔥 Top Brasil', query: 'top musicas brasil 2026' },
+                { label: '😌 Lo-fi', query: 'lofi hip hop study beats' },
+                { label: '🎸 Rock', query: 'rock classico playlist' },
+                { label: '🎵 Pop', query: 'pop hits 2026 playlist' },
+                { label: '🌙 Noturno', query: 'musicas para dormir relaxar' },
+                { label: '💪 Treino', query: 'musicas para treino academia 2026' },
+                { label: '🎹 Piano', query: 'piano relaxante instrumental' },
+                { label: '🇧🇷 Sertanejo', query: 'sertanejo universitario 2026' },
+            ];
+
+            return (
+                <div className="flex-1 flex flex-col min-h-0 route-fade">
+                    {/* Header */}
+                    <div className="flex items-center gap-3 px-4 md:px-6 py-4 border-b border-white/5">
+                        <button onClick={onBack}
+                            className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4 text-slate-400">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                                style={{ background: 'linear-gradient(135deg, #FF0000, #CC0000)' }}>
+                                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
+                                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h1 className="text-white font-black text-base leading-tight">YouTube Premium</h1>
+                                <p className="text-[10px] text-slate-500 font-medium">YouTube Music · Sem anúncios · Google Family</p>
+                            </div>
+                        </div>
+                        <span className="ml-auto text-[9px] font-black px-2 py-1 rounded-lg tracking-wider"
+                            style={{ background: 'rgba(255,0,0,0.15)', color: '#FF4444', border: '1px solid rgba(255,0,0,0.25)' }}>
+                            PREMIUM
+                        </span>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto custom-scrollbar pb-20 md:pb-6">
+                        {/* Search */}
+                        <div className="px-4 md:px-6 mt-5">
+                            <form onSubmit={handleSearch} className="flex gap-2">
+                                <div className="relative flex-1">
+                                    <input type="text" value={searchInput} onChange={(e) => setSearchInput(e.target.value)}
+                                        placeholder="Buscar música, artista, playlist..."
+                                        style={{ fontSize: '16px' }}
+                                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.06] border border-white/[0.08] text-sm text-white placeholder-slate-500 focus:outline-none focus:border-red-500/50 transition-all" />
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                                        className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                                    </svg>
+                                </div>
+                                <button type="submit"
+                                    className="px-4 py-3 rounded-xl font-bold text-sm text-white transition-all active:scale-95 shrink-0"
+                                    style={{ background: '#FF0000' }}>
+                                    Buscar
+                                </button>
+                            </form>
+                        </div>
+
+                        {/* Player iframe */}
+                        {searchQuery ? (
+                            <div className="mx-4 md:mx-6 mt-4">
+                                <div className="flex items-center justify-between mb-2">
+                                    <p className="text-xs text-slate-400 font-semibold">
+                                        Resultados para: <span className="text-white">"{searchQuery}"</span>
+                                    </p>
+                                    <button onClick={() => { setSearchQuery(''); setSearchInput(''); }}
+                                        className="text-[10px] text-slate-500 hover:text-white transition-colors">
+                                        Limpar
+                                    </button>
+                                </div>
+                                <div className="w-full rounded-2xl overflow-hidden border border-white/[0.07]"
+                                    style={{ position: 'relative', paddingBottom: '56.25%', background: '#000', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+                                    <iframe key={searchQuery}
+                                        src={`https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(searchQuery)}&autoplay=1&rel=0`}
+                                        title={`YouTube Music — ${searchQuery}`}
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} />
+                                </div>
+                                <p className="text-[10px] text-slate-600 text-center mt-2">
+                                    Use a conta do Google Family para ouvir sem anúncios
+                                </p>
+                            </div>
+                        ) : (
+                            /* Quick searches */
+                            <div className="px-4 md:px-6 mt-5">
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-3">Tocar agora</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {quickSearches.map((item) => (
+                                        <button key={item.query}
+                                            onClick={() => { setSearchInput(item.query); setSearchQuery(item.query); }}
+                                            className="flex items-center gap-2.5 px-3 py-3 rounded-xl text-left transition-all active:scale-[0.97]"
+                                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                                            <span className="text-xl leading-none">{item.label.split(' ')[0]}</span>
+                                            <span className="text-xs text-slate-300 font-semibold leading-tight">
+                                                {item.label.split(' ').slice(1).join(' ')}
+                                            </span>
+                                            <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-slate-600 ml-auto shrink-0">
+                                                <path d="M8 5v14l11-7z"/>
+                                            </svg>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* YouTube Music link */}
+                        <div className="mx-4 md:px-6 mt-5 mb-2">
+                            <a href="https://music.youtube.com" target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all active:scale-[0.98]"
+                                style={{ background: 'linear-gradient(135deg, rgba(255,0,0,0.12), rgba(180,0,0,0.08))', border: '1px solid rgba(255,0,0,0.2)' }}>
+                                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                                    style={{ background: 'rgba(255,0,0,0.2)' }}>
+                                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-red-400">
+                                        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                                    </svg>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-bold text-white">YouTube Music</p>
+                                    <p className="text-[10px] text-slate-500">Abrir app de música</p>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-slate-600 shrink-0">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         function App() {
             // --- GLOBAL STATE FROM SUPABASE ---
             const [users, setUsers] = useState(() => {
@@ -2422,8 +2567,32 @@
                                                         <p className="text-xs text-slate-600">Contate o administrador para liberar seus streamings.</p>
                                                     </div>
                                                 ) : (
-                                                    accessiblePlatforms.map(p => (
-                                                        <div key={p.id} className="glass-panel rounded-2xl overflow-hidden shadow-xl border border-white/5 flex flex-col group hover:border-brandAccent/30 transition-all duration-300">
+                                                    accessiblePlatforms.map(p => {
+                                                        const isYouTube = p.name?.toLowerCase().includes('youtube');
+                                                        return isYouTube ? (
+                                                            <div key={p.id} onClick={() => setCurrentRoute('youtube')}
+                                                                className="glass-panel rounded-2xl overflow-hidden shadow-xl border border-white/5 flex flex-col group hover:border-red-500/40 transition-all duration-300 cursor-pointer">
+                                                                <div className="h-1.5 w-full bg-gradient-to-r from-red-600 to-red-500" />
+                                                                <div className="p-6 flex flex-col items-center flex-1 gap-4">
+                                                                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-2"
+                                                                        style={{ background: 'linear-gradient(135deg, #FF0000, #CC0000)', boxShadow: '0 8px 24px rgba(255,0,0,0.3)' }}>
+                                                                        <svg viewBox="0 0 24 24" className="w-9 h-9 fill-white">
+                                                                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                                                                        </svg>
+                                                                    </div>
+                                                                    <h3 className="text-lg font-bold text-white text-center">YouTube Premium</h3>
+                                                                    <p className="text-[10px] text-slate-500 text-center leading-relaxed">
+                                                                        YouTube Music · Google Family<br/>Sem anúncios
+                                                                    </p>
+                                                                    <span className="mt-auto w-full py-3 rounded-xl font-bold text-xs tracking-wider text-center shadow-lg hover:brightness-110 transition-all uppercase flex items-center justify-center gap-2"
+                                                                        style={{ background: 'linear-gradient(135deg, #FF0000, #CC0000)', boxShadow: '0 4px 20px rgba(255,0,0,0.3)' }}>
+                                                                        <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white"><path d="M8 5v14l11-7z"/></svg>
+                                                                        <span className="text-white">ABRIR YOUTUBE</span>
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div key={p.id} className="glass-panel rounded-2xl overflow-hidden shadow-xl border border-white/5 flex flex-col group hover:border-brandAccent/30 transition-all duration-300">
                                                             <div className={`h-1.5 w-full bg-gradient-to-r ${p.color}`} />
                                                             <div className="p-6 flex flex-col items-center flex-1 gap-4">
                                                                 <SafeLogo logo={p.logo} name={p.name} className="h-16 w-auto object-contain mb-2 drop-shadow-lg" />
@@ -2472,7 +2641,8 @@
                                                                 </a>
                                                             </div>
                                                         </div>
-                                                    ))
+                                                        );
+                                                    })
                                                 )}
                                             </div>
                                         </div>
@@ -2494,6 +2664,13 @@
                                     </main>
                                 )}
 
+
+                                {/* ======================================================== */}
+                                {/*              YOUTUBE PREMIUM / MUSIC PAGE                */}
+                                {/* ======================================================== */}
+                                {currentRoute === 'youtube' && (
+                                    <YouTubePage onBack={() => setCurrentRoute('acessos')} />
+                                )}
 
                                 {/* ======================================================== */}
                                 {/*             4. ADMINISTRATOR CONTROL PANEL               */}
