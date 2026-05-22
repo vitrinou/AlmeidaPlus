@@ -82,4 +82,34 @@ VALUES
   ('531', 'Paramount+', 'https://image.tmdb.org/t/p/original/h5DcR0J2EESLitnhR8xLG1QymTE.jpg', 'https://paramountplus.com', 'paramount.almeida@gmail.com', 'AlmeidaSenha123', 9.00, true)
 ON CONFLICT DO NOTHING;
 
+-- 8. RLS POLICIES - Permite acesso anonimo (sem auth) às tabelas
+-- IMPORTANTE: Execute isso APÓS criar as tabelas, no SQL Editor do Supabase
+
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE platforms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_favorites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
+
+-- Políticas para users: leitura, inserção, atualização e deleção para anon
+CREATE POLICY "anon_users_select" ON users FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_users_insert" ON users FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_users_update" ON users FOR UPDATE TO anon USING (true);
+CREATE POLICY "anon_users_delete" ON users FOR DELETE TO anon USING (true);
+
+-- Políticas para platforms
+CREATE POLICY "anon_platforms_select" ON platforms FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_platforms_insert" ON platforms FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_platforms_update" ON platforms FOR UPDATE TO anon USING (true);
+CREATE POLICY "anon_platforms_delete" ON platforms FOR DELETE TO anon USING (true);
+
+-- Políticas para user_favorites
+CREATE POLICY "anon_favorites_select" ON user_favorites FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_favorites_insert" ON user_favorites FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_favorites_delete" ON user_favorites FOR DELETE TO anon USING (true);
+
+-- Políticas para user_settings
+CREATE POLICY "anon_settings_select" ON user_settings FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_settings_insert" ON user_settings FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_settings_update" ON user_settings FOR UPDATE TO anon USING (true);
+
 -- FEITO! Agora você pode usar o Supabase para sincronizar dados.

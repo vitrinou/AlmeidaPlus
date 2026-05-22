@@ -33,18 +33,18 @@
                         sans: ['Outfit', 'sans-serif'],
                     },
                     colors: {
-                        brandDark: '#0B0F19',
-                        brandCard: 'rgba(17, 24, 39, 0.75)',
-                        brandBorder: 'rgba(255, 255, 255, 0.08)',
-                        brandAccent: '#3B82F6',
-                        brandViolet: '#8B5CF6',
+                        brandDark: '#080A0F',
+                        brandCard: 'rgba(12, 12, 15, 0.85)',
+                        brandBorder: 'rgba(255, 255, 255, 0.07)',
+                        brandAccent: '#E54711',
+                        brandViolet: '#E54711',
                         brandEmerald: '#10B981',
                         brandRose: '#F43F5E',
                     },
                     boxShadow: {
-                        'neon-blue': '0 0 25px rgba(59, 130, 246, 0.2)',
-                        'neon-violet': '0 0 25px rgba(139, 92, 246, 0.2)',
-                        'neon-glow': '0 0 35px rgba(59, 130, 246, 0.25)',
+                        'neon-blue': '0 0 25px rgba(229, 71, 17, 0.25)',
+                        'neon-violet': '0 0 25px rgba(229, 71, 17, 0.2)',
+                        'neon-glow': '0 0 35px rgba(229, 71, 17, 0.2)',
                     },
                     animation: {
                         'pulse-slow': 'pulse 3.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
@@ -121,7 +121,7 @@
         }
 
         .poster-card {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(139, 92, 246, 0.12));
+            background: linear-gradient(135deg, rgba(229, 71, 17, 0.15), rgba(229, 71, 17, 0.08));
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
         }
 
@@ -154,12 +154,21 @@
             background: rgba(255, 255, 255, 0.2);
         }
 
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(229,71,17,0.35); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(229,71,17,0.6); }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .route-fade {
+            animation: fadeIn 0.22s ease-out both;
+        }
+
         body {
-            background-color: #0B0F19;
-            background-image:
-                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.04) 0px, transparent 50%),
-                radial-gradient(at 50% 0%, rgba(139, 92, 246, 0.04) 0px, transparent 50%),
-                radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.04) 0px, transparent 50%);
+            background-color: #080A0F;
             background-attachment: fixed;
             color: #E2E8F0;
             overflow-x: hidden;
@@ -167,11 +176,10 @@
         }
 
         .glass-panel {
-            background: rgba(17, 24, 39, 0.6);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            background: rgba(10, 10, 13, 0.80);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
         }
 
         /* Custom iOS Toggle Switch */
@@ -241,12 +249,22 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // Configuration
-        const TMDB_API_KEY = 'ae1ffdaeec525df9db4a4840302aa2f5';
-        const TMDB_BEARER_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhZTFmZmRhZWVjNTI1ZGY5ZGI0YTQ4NDAzMDJhYTJmNSIsIm5iZiI6MTc3OTM2NDg0OS4yODgsInN1YiI6IjZhMGVmM2YxNjg5OTZmNWRiYmE5NWY3YSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.a7VG_t01ccy47ijSEtH6IpZJDC1AsgO9qFegjcLaHKY';
+        // Configuration (TMDB keys are server-side only, set in Vercel env vars)
         const REGION = 'BR';
         const LANG = 'pt-BR';
 
+        const API_PROXY = '/api';
+
+        // TMDB helper — routes through Vercel proxy (keys are server-side only)
+        const tmdbFetch = async (endpoint, params = {}) => {
+            const response = await fetch(`${API_PROXY}/tmdb`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ endpoint, params: { ...params, language: LANG, region: REGION } })
+            });
+            if (!response.ok) throw new Error('TMDB request failed');
+            return response.json();
+        };
 
         // BrandLogo Vector component for safe premium visualization
         const BrandLogo = ({ name, className = "w-6 h-6" }) => {
@@ -324,7 +342,7 @@
 
             const initials = user && user.name ? user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '?';
             const fallbackDiv = (
-                <div className={`${sizeClass} bg-gradient-to-br from-brandAccent/30 to-brandViolet/30 border border-brandAccent/25 text-white flex items-center justify-center font-bold text-[11px] shrink-0 uppercase`}>
+                <div className={`${sizeClass} bg-gradient-to-br from-brandAccent/20 to-brandAccent/10 border border-brandAccent/20 text-white flex items-center justify-center font-bold text-[11px] shrink-0 uppercase`}>
                     {initials}
                 </div>
             );
@@ -499,6 +517,11 @@
                     <svg fill="currentColor" viewBox="0 0 24 24" className={className}>
                         <path d="M12 2.25l2.99 6.06 6.69.97-4.84 4.72 1.14 6.66L12 17.51l-5.98 3.15 1.14-6.66-4.84-4.72 6.69-.97L12 2.25z" />
                     </svg>
+                ),
+                x: (
+                    <svg fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className={className}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                 )
             };
             return icons[name] || <span className={className}>?</span>;
@@ -611,26 +634,36 @@
                                     <div
                                         key={m.id}
                                         onClick={() => onSelectMovie(m)}
-                                        className="w-36 sm:w-40 bg-brandCard border border-brandBorder rounded-2xl overflow-hidden group cursor-pointer hover:border-brandAccent/40 transition-all duration-300 hover:-translate-y-1 shadow-lg relative shrink-0"
+                                        className="flex-shrink-0 w-36 sm:w-40 cursor-pointer group relative"
+                                        style={{ borderRadius: '8px', overflow: 'hidden' }}
                                     >
-                                        <div className="aspect-[2/3] overflow-hidden relative poster-card">
-                                            <img src={m.poster_path || m.backdrop_path} alt={m.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                                            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/90 to-transparent pointer-events-none" />
-                                            <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/70 text-[10px] font-bold text-yellow-400 border border-white/10 flex items-center gap-1">
-                                                <Icon name="star" className="w-3 h-3" />
-                                                <span>{m.vote_average?.toFixed(1) || '8.0'}</span>
-                                            </div>
-                                            {provider && (
-                                                <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/75 backdrop-blur border border-white/10 flex items-center gap-1.5 max-w-[90%]">
-                                                    <SafeLogo logo={provider.logo} name={provider.name} className="w-3.5 h-3.5 object-contain rounded" />
-                                                    <span className="text-[8px] font-extrabold text-white uppercase tracking-wider truncate">{provider.name}</span>
+                                        <div style={{ aspectRatio: '2/3', background: '#111', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
+                                            <img
+                                                src={m.poster_path
+                                                    ? `https://image.tmdb.org/t/p/w300${m.poster_path}`
+                                                    : (m.backdrop_path || '')}
+                                                alt={m.title}
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s ease', display: 'block' }}
+                                                className="group-hover:scale-105"
+                                                loading="lazy"
+                                                onError={e => { e.target.style.display = 'none'; }}
+                                            />
+                                            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 60%)', opacity: 0, transition: 'opacity 0.25s' }} className="group-hover:opacity-100" />
+                                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.25s' }} className="group-hover:opacity-100">
+                                                <div style={{ background: 'rgba(229,71,17,0.9)', borderRadius: '50%', padding: '10px', backdropFilter: 'blur(4px)' }}>
+                                                    <Icon name="play" className="w-5 h-5 text-white" style={{ fill: 'currentColor' }} />
                                                 </div>
-                                            )}
+                                            </div>
+                                            <div style={{ position: 'absolute', top: '6px', right: '6px', background: 'rgba(0,0,0,0.75)', borderRadius: '4px', padding: '2px 6px', fontSize: '10px', fontWeight: 700, color: '#FBBF24', display: 'flex', alignItems: 'center', gap: '3px', backdropFilter: 'blur(4px)' }}>
+                                                ★ {m.vote_average?.toFixed(1) || '8.0'}
+                                            </div>
                                         </div>
-                                        <div className="p-3">
-                                            <h4 className="text-[11px] font-extrabold text-white truncate uppercase tracking-wide">{m.title}</h4>
-                                            <p className="text-[9px] text-slate-500 mt-1">{m.release_date ? m.release_date.split('-')[0] : '2024'}</p>
-                                        </div>
+                                        <p style={{ fontSize: '11px', fontWeight: 700, color: '#fff', marginTop: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '0.02em' }}>
+                                            {m.title}
+                                        </p>
+                                        <p style={{ fontSize: '10px', color: 'rgba(150,150,150,0.7)', marginTop: '2px' }}>
+                                            {m.release_date?.split('-')[0] || '2024'}
+                                        </p>
                                     </div>
                                 );
                             })}
@@ -716,6 +749,8 @@
                 return saved ? JSON.parse(saved) : [];
             });
 
+            // Trailer modal state
+            const [trailerModal, setTrailerModal] = useState(null);
             // Video player simulation state
             const [isPlaying, setIsPlaying] = useState(false);
             const [playbackProgress, setPlaybackProgress] = useState(32.75);
@@ -784,7 +819,8 @@
                     window.supabase.getAllUsers()
                         .then(dbUsers => {
                             if (dbUsers && dbUsers.length > 0) {
-                                setUsers(dbUsers);
+                                const normalized = dbUsers.map(u => ({ ...u, isFirstLogin: u.is_first_login }));
+                                setUsers(normalized);
                             }
                         })
                         .catch(e => console.error('Supabase users load error', e));
@@ -910,22 +946,13 @@
                     return [activePlatformId];
                 };
 
-                const fetchJson = async (url) => {
-                    const response = await fetch(url, { headers: { Authorization: `Bearer ${TMDB_BEARER_TOKEN}` } });
-                    if (!response.ok) throw new Error('TMDB request failed');
-                    return response.json();
-                };
-
-                const buildDiscoverUrl = (providerIdsStr, params = {}, page = 1) => {
-                    const query = new URLSearchParams({
-                        api_key: TMDB_API_KEY,
-                        language: LANG,
+                const fetchTmdbDiscover = async (providerIdsStr, extraParams = {}, page = 1) => {
+                    return tmdbFetch('discover/movie', {
                         watch_region: REGION,
                         with_watch_providers: providerIdsStr,
                         page: String(page),
-                        ...params
+                        ...extraParams
                     });
-                    return `https://api.themoviedb.org/3/discover/movie?${query.toString()}`;
                 };
 
                 const loadCatalog = async () => {
@@ -934,16 +961,12 @@
                     try {
                         if (searchQuery.trim()) {
                             const pages = [1, 2, 3];
-                            const responses = await Promise.all(pages.map(page => {
-                                const query = new URLSearchParams({
-                                    api_key: TMDB_API_KEY,
-                                    language: LANG,
-                                    region: REGION,
+                            const responses = await Promise.all(pages.map(page =>
+                                tmdbFetch('search/movie', {
                                     query: searchQuery.trim(),
                                     page: String(page)
-                                });
-                                return fetchJson(`https://api.themoviedb.org/3/search/movie?${query.toString()}`);
-                            }));
+                                })
+                            ));
 
                             const formatted = uniqMovies(
                                 responses.flatMap(data => data.results || []).filter(m => m.backdrop_path || m.poster_path)
@@ -965,7 +988,7 @@
 
                         const fetchSection = async (params = {}) => {
                             try {
-                                const responses = await Promise.all([1, 2].map(page => fetchJson(buildDiscoverUrl(providerIdsStr, params, page))));
+                                const responses = await Promise.all([1, 2].map(page => fetchTmdbDiscover(providerIdsStr, params, page)));
                                 const results = uniqMovies(responses.flatMap(data => data.results || []).filter(m => m.backdrop_path || m.poster_path));
                                 return (results.length ? results : getFallback()).map(formatMovie);
                             } catch (err) {
@@ -1029,9 +1052,7 @@
                     try {
                         const pages = [1, 2, 3, 4];
                         const responses = await Promise.all(pages.map(page =>
-                            fetch(`https://api.themoviedb.org/3/trending/all/week?api_key=${TMDB_API_KEY}&language=pt-BR&page=${page}`, {
-                                headers: { Authorization: `Bearer ${TMDB_BEARER_TOKEN}` }
-                            }).then(r => { if (!r.ok) throw new Error('TMDB request failed'); return r.json(); })
+                            tmdbFetch('trending/all/week', { page: String(page) })
                         ));
 
                         if (!cancelled) {
@@ -1063,29 +1084,51 @@
             };
 
             // --- LOGIN HANDLING ---
-            const handleLogin = (e) => {
+            const handleLogin = async (e) => {
                 if (e) e.preventDefault();
                 setLoginError('');
 
-                const found = users.find(u => u.email.toLowerCase() === loginEmail.toLowerCase().trim());
-                if (!found) {
+                // Always fetch fresh from Supabase first (avoids stale isFirstLogin)
+                let authUser = null;
+                try {
+                    const dbUser = await window.supabase?.getUser(loginEmail.toLowerCase().trim());
+                    if (dbUser) {
+                        authUser = { ...dbUser, isFirstLogin: dbUser.is_first_login };
+                    }
+                } catch (err) {
+                    console.error('Supabase user lookup failed:', err);
+                }
+
+                // Fallback: try local state cache
+                if (!authUser) {
+                    const localUser = users.find(u => u.email.toLowerCase() === loginEmail.toLowerCase().trim());
+                    if (localUser) authUser = localUser;
+                }
+
+                if (!authUser) {
                     setLoginError('Usuário não encontrado. Verifique seu e-mail.');
                     return;
                 }
 
-                if (found.password !== loginPassword) {
+                if (authUser.password !== loginPassword) {
                     setLoginError('Senha incorreta.');
                     return;
                 }
 
-                setCurrentUser(found);
-                localStorage.setItem('ap_currentUser', JSON.stringify(found));
-                if (found.role === 'admin') {
+                // Sync local state with fresh data
+                setUsers(prev => {
+                    const exists = prev.some(u => u.id === authUser.id);
+                    return exists ? prev.map(u => u.id === authUser.id ? authUser : u) : [...prev, authUser];
+                });
+
+                setCurrentUser(authUser);
+                localStorage.setItem('ap_currentUser', JSON.stringify(authUser));
+                if (authUser.role === 'admin') {
                     setCurrentRoute('admin');
                     showToast('Olá Almeida, painel administrativo desbloqueado!', 'success');
                 } else {
                     setCurrentRoute('hub');
-                    showToast(`Bem-vindo de volta, ${found.name}!`, 'success');
+                    showToast(`Bem-vindo de volta, ${authUser.name}!`, 'success');
                 }
             };
 
@@ -1182,7 +1225,7 @@
                 if (window.supabase) {
                     const created = await window.supabase.createUser(newUser);
                     if (created) {
-                        setUsers(prev => [...prev, created]);
+                        setUsers(prev => [...prev, { ...created, isFirstLogin: created.is_first_login }]);
                     } else {
                         showToast('Erro ao criar no banco.', 'error');
                         return;
@@ -1344,6 +1387,38 @@
                 if (closeModal) setSelectedMovie(null);
             };
 
+            // --- TRAILER HANDLER ---
+            const handleOpenTrailer = async (movie, closeModal = false) => {
+                const provider = getMovieProvider(movie);
+                if (provider && provider.email && provider.password) {
+                    copyText(provider.password, 'Senha copiada!');
+                    setActiveCredentialsToast({
+                        email: provider.email,
+                        password: provider.password,
+                        platform: provider.name
+                    });
+                    setTimeout(() => setActiveCredentialsToast(null), 9000);
+                }
+                if (closeModal) setSelectedMovie(null);
+                try {
+                    const data = await tmdbFetch(`movie/${movie.id}/videos`, { language: 'pt-BR' });
+                    let trailer = data.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+                    if (!trailer) {
+                        const data2 = await tmdbFetch(`movie/${movie.id}/videos`, { language: 'en-US' });
+                        trailer = data2.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+                    }
+                    if (trailer?.key) {
+                        setTrailerModal({ movie, youtubeKey: trailer.key, providerUrl: provider?.url || null, providerName: provider?.name || 'Streaming' });
+                    } else {
+                        showToast('Trailer não disponível. Abrindo plataforma...', 'info');
+                        if (provider?.url) window.open(provider.url, '_blank');
+                    }
+                } catch (err) {
+                    showToast('Sem trailer disponível. Abrindo plataforma...', 'info');
+                    if (provider?.url) window.open(provider.url, '_blank');
+                }
+            };
+
             // Finance widgets removed for compliance and simplicity
 
             // Calculate movies inside the user's favorites list
@@ -1373,18 +1448,18 @@
 
                     {/* Simulated Toast System */}
                     {toast.visible && (
-                        <div className="fixed top-8 right-8 z-[999] flex items-center gap-3 px-5 py-4 rounded-xl shadow-2xl transition-all duration-300 transform translate-y-0 scale-100 glass-panel border-l-4 border-l-brandAccent border border-white/10 animate-float">
-                            <span className={`w-3 h-3 rounded-full ${toast.type === 'success' ? 'bg-brandEmerald animate-ping' : 'bg-brandRose animate-ping'}`} />
+                        <div className="fixed top-8 right-8 z-[999] flex items-center gap-3 px-5 py-4 rounded-xl shadow-2xl transition-all duration-300 transform translate-y-0 scale-100 glass-panel border-l-4 border-l-brandAccent border border-white/6 animate-float">
+                            <span style={{ fontSize: '16px', lineHeight: 1 }}>{toast.type === 'success' ? '✓' : '✕'}</span>
                             <p className="text-sm font-semibold text-white/95">{toast.message}</p>
                         </div>
                     )}
 
                     {/* Credentials Copy Toast */}
                     {activeCredentialsToast && (
-                        <div className="fixed top-24 right-4 sm:right-8 z-[999] w-[calc(100vw-2rem)] max-w-sm p-4 rounded-xl shadow-2xl glass-panel border border-brandViolet/20 bg-brandViolet/5 backdrop-blur-xl animate-float">
+                        <div className="fixed top-24 right-4 sm:right-8 z-[999] w-[calc(100vw-2rem)] max-w-sm p-4 rounded-xl shadow-2xl glass-panel border border-brandAccent/15 bg-brandAccent/4 backdrop-blur-xl animate-float">
                             <div className="flex items-center gap-2 mb-3">
-                                <Icon name="key" className="w-4 h-4 text-brandViolet" />
-                                <h4 className="font-bold text-sm text-brandViolet uppercase tracking-wider">{activeCredentialsToast.platform}</h4>
+                                <Icon name="key" className="w-4 h-4 text-brandAccent" />
+                                <h4 className="font-bold text-sm text-brandAccent uppercase tracking-wider">{activeCredentialsToast.platform}</h4>
                             </div>
                             <div className="space-y-2.5 bg-black/40 rounded-lg p-3 mb-3 border border-white/5">
                                 <div>
@@ -1401,7 +1476,7 @@
                                 <button
                                     type="button"
                                     onClick={() => copyText(activeCredentialsToast.password, 'Senha copiada novamente.')}
-                                    className="flex-1 py-2 rounded-lg bg-brandViolet/20 text-brandViolet border border-brandViolet/25 text-[10px] font-extrabold uppercase tracking-wider hover:bg-brandViolet/30 transition"
+                                    className="flex-1 py-2 rounded-lg bg-brandAccent/20 text-brandAccent border border-brandAccent/25 text-[10px] font-extrabold uppercase tracking-wider hover:bg-brandAccent/30 transition"
                                 >
                                     Copiar Senha
                                 </button>
@@ -1618,120 +1693,139 @@
                     {currentRoute !== 'login' && currentUser && (
                         <div className="flex-1 w-full max-w-none mx-auto px-4 md:px-6 lg:px-8 py-5 flex flex-col gap-5 relative">
 
-                            {/* --- FIRST LOGIN WIZARD OVERLAY --- */}
+                            {/* --- FIRST LOGIN WIZARD OVERLAY (Redesigned) --- */}
                             {currentUser.isFirstLogin && (
-                                <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 md:p-8 bg-brandDark/98 overflow-y-auto">
-                                    <div className="w-full max-w-5xl glass-panel rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row relative min-h-[550px] animate-float">
-                                        <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-brandAccent via-brandViolet to-brandEmerald" />
+                                <div className="fixed inset-0 z-[2000] flex items-center justify-center p-3 md:p-6 bg-black/95 overflow-y-auto">
+                                    {/* Animated background glow */}
+                                    <div className="fixed inset-0 pointer-events-none">
+                                        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brandAccent/4 rounded-full blur-[120px] animate-pulse-slow" />
+                                        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-brandAccent/5 rounded-full blur-[100px] animate-pulse-slow" style={{ animationDelay: '1.5s' }} />
+                                    </div>
 
-                                        {/* Coluna 1: Preview em Tempo Real */}
-                                        <div className="w-full md:w-5/12 bg-gradient-to-br from-brandAccent/10 via-brandViolet/5 to-transparent p-8 flex flex-col items-center justify-center border-r border-white/5 relative">
-                                            <div className="absolute -inset-1.5 rounded-3xl bg-gradient-to-r from-brandAccent to-brandViolet blur-2xl opacity-10 -z-10 pointer-events-none" />
+                                    <div className="w-full max-w-4xl relative bg-gradient-to-br from-brandCard to-[#0f1420] border border-white/[0.06] rounded-3xl overflow-hidden shadow-[0_0_80px_rgba(59,130,246,0.06)]">
+                                        {/* Top gradient bar */}
+                                        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-brandAccent/60 to-transparent" />
 
-                                            <div className="text-center mb-6">
-                                                <span className="text-[9px] font-extrabold uppercase bg-brandAccent/10 text-brandAccent px-2.5 py-1 rounded border border-brandAccent/20 tracking-wider">
-                                                    Pré-visualização
-                                                </span>
-                                                <h4 className="text-sm font-bold text-white mt-2">Sua Conta Almeida+</h4>
-                                            </div>
+                                        <div className="flex flex-col md:flex-row">
+                                            {/* LEFT PANEL - Welcome + Preview */}
+                                            <div className="w-full md:w-[38%] bg-gradient-to-b from-brandAccent/[0.04] to-transparent p-7 md:p-9 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-white/[0.04] relative">
+                                                {/* Decorative orbs */}
+                                                <div className="absolute -top-10 -left-10 w-40 h-40 bg-brandAccent/[0.03] rounded-full blur-[60px]" />
+                                                <div className="absolute -bottom-10 -right-10 w-36 h-36 bg-brandAccent/[0.03] rounded-full blur-[50px]" />
 
-                                            {/* Preview Card styled exactly like left sidebar */}
-                                            <div className="w-full max-w-xs glass-panel rounded-2xl p-6 relative overflow-hidden flex flex-col gap-4 border border-white/10 shadow-xl transition-all duration-300">
-                                                <div className="absolute top-0 right-0 w-20 h-20 bg-brandAccent/10 rounded-full blur-xl pointer-events-none" />
-
-                                                <div className="flex items-center gap-4">
-                                                    <div className="relative shrink-0">
-                                                        <SafeAvatar
-                                                            user={{
-                                                                name: currentUser.name,
-                                                                avatar: wizardAvatarType === 'preset' ? wizardSelectedAvatar : (wizardAvatarType === 'custom' ? wizardCustomAvatarUrl : null)
-                                                            }}
-                                                            sizeClass="w-16 h-16 rounded-2xl"
-                                                        />
-                                                        <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-[#111827] bg-brandEmerald" />
+                                                {/* Logo + step indicator */}
+                                                <div className="text-center mb-6">
+                                                    <div className="flex items-center justify-center gap-0.5 mb-4">
+                                                        <span className="text-xl font-black tracking-tighter" style={{ color: 'var(--logo-text-color)' }}>ALMEIDA</span>
+                                                        <span className="text-2xl font-black" style={{ color: 'var(--logo-plus-color)' }}>+</span>
                                                     </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-xs text-slate-400 font-medium">Conta ativa</p>
-                                                        <p className="text-base font-extrabold text-white truncate leading-tight mt-0.5">{currentUser.name}</p>
-                                                        <span className="text-[9px] px-2 py-0.5 rounded bg-brandEmerald/15 text-brandEmerald font-bold border border-brandEmerald/25 uppercase tracking-widest mt-1.5 inline-block">
-                                                            Ativo
+                                                    <span className="inline-block text-[9px] font-black uppercase tracking-[0.2em] bg-white/[0.04] text-white/40 px-3 py-1.5 rounded-full border border-white/[0.06]">
+                                                        Boas-vindas
+                                                    </span>
+                                                </div>
+
+                                                {/* Preview card */}
+                                                <div className="w-full max-w-[240px] glass-panel rounded-2xl p-5 relative overflow-hidden border border-white/[0.06] shadow-xl transition-all duration-500">
+                                                    <div className="absolute inset-0 bg-gradient-to-br from-brandAccent/[0.03] to-transparent pointer-events-none" />
+
+                                                    <div className="flex flex-col items-center text-center gap-3 relative">
+                                                        <div className="relative">
+                                                            <SafeAvatar
+                                                                user={{
+                                                                    name: currentUser.name,
+                                                                    avatar: wizardAvatarType === 'custom' ? wizardCustomAvatarUrl : null
+                                                                }}
+                                                                sizeClass="w-20 h-20 rounded-2xl ring-2 ring-white/[0.06]"
+                                                            />
+                                                            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-brandEmerald border-2 border-[#0f1420] flex items-center justify-center">
+                                                                <svg viewBox="0 0 12 12" className="w-2.5 h-2.5 fill-white"><path d="M4.5 8.5L2 6l-.7.7L4.5 10l6-6-.7-.7z"/></svg>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-bold text-white">{currentUser.name}</p>
+                                                            <p className="text-[10px] text-white/30 font-mono mt-0.5">{currentUser.email}</p>
+                                                        </div>
+                                                        <span className="text-[8px] font-bold uppercase tracking-[0.15em] bg-brandEmerald/[0.08] text-brandEmerald px-2.5 py-1 rounded-full border border-brandEmerald/[0.12]">
+                                                            {currentUser.role === 'admin' ? 'Administrador' : 'Membro'}
                                                         </span>
                                                     </div>
                                                 </div>
 
-                                                <div className="h-[1px] bg-white/5 my-1" />
-                                                <div className="text-[10px] text-slate-400 font-mono flex items-center justify-between">
-                                                    <span>Nível: {currentUser.role === 'admin' ? 'Administrador' : 'Membro'}</span>
-                                                    <span className="text-brandAccent">ID: {currentUser.name.toLowerCase()}</span>
+                                                <p className="text-[10px] text-white/20 text-center mt-5 leading-relaxed max-w-[200px]">
+                                                    Personalize sua conta para começar a usar a plataforma.
+                                                </p>
+                                            </div>
+
+                                            {/* RIGHT PANEL - Form */}
+                                            <div className="flex-1 p-7 md:p-9 flex flex-col gap-6">
+                                                <div>
+                                                    <h2 className="text-xl font-black text-white tracking-tight">Primeiro Acesso</h2>
+                                                    <p className="text-[11px] text-white/35 mt-1">Defina sua senha e escolha uma foto de perfil.</p>
                                                 </div>
-                                            </div>
-                                        </div>
 
-                                        {/* Coluna 2: Formulário e Configurações */}
-                                        <div className="w-full md:w-7/12 p-8 flex flex-col gap-6 justify-between bg-black/30">
-                                            <div>
-                                                <h2 className="text-2xl font-black text-white tracking-tight">Primeiro Acesso</h2>
-                                                <p className="text-xs text-slate-400 mt-1">Configure seus acessos iniciais de forma fácil e intuitiva.</p>
-                                            </div>
-
-                                            <div className="space-y-5">
-                                                {/* 1. MUDAR SENHA */}
+                                                {/* Password section */}
                                                 <div className="space-y-3">
-                                                    <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Definir Senha Segura</h3>
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                        <input
-                                                            type="password"
-                                                            value={wizardPassword}
-                                                            onChange={(e) => {
-                                                                setWizardPassword(e.target.value);
-                                                                setWizardPasswordError('');
-                                                            }}
-                                                            placeholder="Nova Senha"
-                                                            className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white placeholder-slate-600 text-xs focus:outline-none focus:border-brandAccent transition-all"
-                                                        />
-                                                        <input
-                                                            type="password"
-                                                            value={wizardConfirmPassword}
-                                                            onChange={(e) => {
-                                                                setWizardConfirmPassword(e.target.value);
-                                                                setWizardPasswordError('');
-                                                            }}
-                                                            placeholder="Confirmar Senha"
-                                                            className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white placeholder-slate-600 text-xs focus:outline-none focus:border-brandAccent transition-all"
-                                                        />
+                                                    <div className="flex items-center gap-2">
+                                                        <svg viewBox="0 0 20 20" className="w-4 h-4 fill-brandAccent/60"><path fillRule="evenodd" d="M10 2a6 6 0 00-6 6v1H3a2 2 0 00-2 2v6a2 2 0 002 2h14a2 2 0 002-2v-6a2 2 0 00-2-2h-1V8a6 6 0 00-6-6zm4 7V8a4 4 0 10-8 0v1h8zm-5 3a1 1 0 112 0v2a1 1 0 11-2 0v-2z" clipRule="evenodd"/></svg>
+                                                        <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Senha de Acesso</span>
+                                                    </div>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                        <div className="relative">
+                                                            <input
+                                                                type="password"
+                                                                value={wizardPassword}
+                                                                onChange={(e) => { setWizardPassword(e.target.value); setWizardPasswordError(''); }}
+                                                                placeholder="Nova senha"
+                                                                className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/[0.06] text-white text-[11px] placeholder-white/20 focus:outline-none focus:border-brandAccent/40 focus:bg-black/60 transition-all"
+                                                            />
+                                                        </div>
+                                                        <div className="relative">
+                                                            <input
+                                                                type="password"
+                                                                value={wizardConfirmPassword}
+                                                                onChange={(e) => { setWizardConfirmPassword(e.target.value); setWizardPasswordError(''); }}
+                                                                placeholder="Confirmar senha"
+                                                                className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/[0.06] text-white text-[11px] placeholder-white/20 focus:outline-none focus:border-brandAccent/40 focus:bg-black/60 transition-all"
+                                                            />
+                                                        </div>
                                                     </div>
                                                     {wizardPasswordError && (
-                                                        <p className="text-[10px] font-semibold text-brandRose">{wizardPasswordError}</p>
+                                                        <div className="flex items-center gap-1.5 text-[10px] font-semibold text-brandRose">
+                                                            <svg viewBox="0 0 16 16" className="w-3 h-3 fill-brandRose shrink-0"><path d="M8 1a7 7 0 110 14A7 7 0 018 1zm0 9.5a.75.75 0 100 1.5.75.75 0 000-1.5zM8.75 4.5v4a.75.75 0 01-1.5 0v-4a.75.75 0 011.5 0z"/></svg>
+                                                            {wizardPasswordError}
+                                                        </div>
                                                     )}
                                                 </div>
 
-                                                <div className="h-[1px] bg-white/5 my-2" />
+                                                <div className="h-px bg-white/[0.04]" />
 
-                                                {/* 2. ESCOLHER FOTO */}
+                                                {/* Avatar section */}
                                                 <div className="space-y-3">
-                                                    <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">Sua Foto de Perfil</h3>
-
+                                                    <div className="flex items-center gap-2">
+                                                        <svg viewBox="0 0 20 20" className="w-4 h-4 fill-brandAccent/60"><path fillRule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 14a6 6 0 110-12 6 6 0 010 12zm0-9a3 3 0 100 6 3 3 0 000-6z" clipRule="evenodd"/></svg>
+                                                        <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Foto de Perfil</span>
+                                                    </div>
                                                     <div className="flex gap-2">
                                                         <button
                                                             type="button"
                                                             onClick={() => setWizardAvatarType('custom')}
-                                                            className={`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${wizardAvatarType === 'custom' ? 'bg-brandAccent/10 border-brandAccent text-brandAccent shadow-neon-blue' : 'bg-transparent border-white/10 text-slate-400 hover:text-white'}`}
+                                                            className={`flex-1 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${wizardAvatarType === 'custom' ? 'bg-brandAccent/[0.06] border-brandAccent/30 text-brandAccent' : 'bg-transparent border-white/[0.06] text-white/30 hover:text-white/60 hover:border-white/[0.12]'}`}
                                                         >
-                                                            Upload de Foto
+                                                            Enviar Foto
                                                         </button>
                                                         <button
                                                             type="button"
-                                                            onClick={() => setWizardAvatarType('none')}
-                                                            className={`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${wizardAvatarType === 'none' ? 'bg-brandAccent/10 border-brandAccent text-brandAccent shadow-neon-blue' : 'bg-transparent border-white/10 text-slate-400 hover:text-white'}`}
+                                                            onClick={() => { setWizardAvatarType('none'); setWizardCustomAvatarUrl(''); }}
+                                                            className={`flex-1 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${wizardAvatarType === 'none' ? 'bg-brandAccent/[0.06] border-brandAccent/30 text-brandAccent' : 'bg-transparent border-white/[0.06] text-white/30 hover:text-white/60 hover:border-white/[0.12]'}`}
                                                         >
                                                             Sem Foto
                                                         </button>
                                                     </div>
 
-                                                    {/* Custom Avatar File Upload Field */}
+                                                    {/* Upload area */}
                                                     {wizardAvatarType === 'custom' && (
                                                         <div className="space-y-3">
-                                                            <div className="relative group cursor-pointer w-full">
+                                                            <div className="relative group cursor-pointer">
                                                                 <input
                                                                     type="file"
                                                                     accept="image/*"
@@ -1743,20 +1837,12 @@
                                                                             const img = new Image();
                                                                             img.onload = () => {
                                                                                 const canvas = document.createElement('canvas');
-                                                                                const MAX_SIZE = 256;
-                                                                                let width = img.width;
-                                                                                let height = img.height;
-                                                                                if (width > height) {
-                                                                                    if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
-                                                                                } else {
-                                                                                    if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
-                                                                                }
-                                                                                canvas.width = width;
-                                                                                canvas.height = height;
-                                                                                const ctx = canvas.getContext('2d');
-                                                                                ctx.drawImage(img, 0, 0, width, height);
-                                                                                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                                                                                setWizardCustomAvatarUrl(dataUrl);
+                                                                                const MAX = 256;
+                                                                                let w = img.width, h = img.height;
+                                                                                if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+                                                                                canvas.width = w; canvas.height = h;
+                                                                                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                                                                                setWizardCustomAvatarUrl(canvas.toDataURL('image/jpeg', 0.8));
                                                                             };
                                                                             img.src = ev.target.result;
                                                                         };
@@ -1764,70 +1850,71 @@
                                                                     }}
                                                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                                                 />
-                                                                <div className="w-full px-4 py-3 rounded-xl bg-black/40 border border-white/10 border-dashed text-white text-xs flex items-center justify-center gap-2 group-hover:border-brandAccent transition-all">
-                                                                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current text-slate-400 group-hover:text-brandAccent transition-all"><path d="M12 2L8 6h3v8h2V6h3l-4-4zM5 18v2h14v-2H5z" /></svg>
-                                                                    <span>Escolher arquivo...</span>
+                                                                <div className="w-full px-4 py-3 rounded-xl bg-black/30 border border-dashed border-white/[0.06] text-white/30 text-[10px] flex items-center justify-center gap-2 group-hover:border-brandAccent/30 group-hover:text-white/50 transition-all">
+                                                                    <svg viewBox="0 0 20 20" className="w-4 h-4 fill-current"><path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/></svg>
+                                                                    <span>Clique para escolher uma foto</span>
                                                                 </div>
                                                             </div>
-
                                                             {wizardCustomAvatarUrl && (
-                                                                <div className="flex items-center gap-3 p-3 rounded-xl bg-black/25 border border-white/5">
-                                                                    <img src={wizardCustomAvatarUrl} alt="Preview" className="w-12 h-12 rounded-xl object-cover border border-white/10" />
-                                                                    <span className="text-[10px] text-slate-400">Pré-visualização da sua foto</span>
+                                                                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-black/30 border border-white/[0.04]">
+                                                                    <img src={wizardCustomAvatarUrl} alt="" className="w-10 h-10 rounded-lg object-cover border border-white/[0.06]" />
+                                                                    <span className="text-[9px] text-white/30">Foto selecionada</span>
                                                                 </div>
                                                             )}
                                                         </div>
                                                     )}
 
-                                                    {/* No Photo Preview */}
                                                     {wizardAvatarType === 'none' && (
-                                                        <div className="text-[10px] text-slate-400 bg-brandDark/40 p-4 rounded-xl border border-white/5 flex items-center gap-3">
-                                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brandAccent/25 to-brandViolet/25 border border-brandAccent/15 text-white flex items-center justify-center font-black uppercase text-xs animate-pulse">
-                                                                {currentUser.name.substring(0, 2).toUpperCase()}
+                                                        <div className="flex items-center gap-3 p-3 rounded-xl bg-black/20 border border-white/[0.04]">
+                                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brandAccent/20 to-brandAccent/20 border border-white/[0.06] flex items-center justify-center font-black text-xs text-white/40">
+                                                                {currentUser.name.charAt(0).toUpperCase()}
                                                             </div>
                                                             <div>
-                                                                <p className="font-bold text-white uppercase tracking-wider text-[9px]">Padrão da Plataforma</p>
-                                                                <p className="mt-0.5 text-slate-500">Exibiremos suas iniciais coloridas de forma minimalista.</p>
+                                                                <p className="text-[9px] font-bold text-white/40 uppercase tracking-wider">Padrão</p>
+                                                                <p className="text-[9px] text-white/20 mt-0.5">Suas iniciais serão exibidas.</p>
                                                             </div>
                                                         </div>
                                                     )}
                                                 </div>
+
+                                                {/* Save button */}
+                                                <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                        if (wizardPassword.length < 4) {
+                                                            setWizardPasswordError('A senha deve ter pelo menos 4 caracteres.');
+                                                            return;
+                                                        }
+                                                        if (wizardPassword !== wizardConfirmPassword) {
+                                                            setWizardPasswordError('As senhas não coincidem.');
+                                                            return;
+                                                        }
+
+                                                        const chosenAvatar = wizardAvatarType === 'custom' ? (wizardCustomAvatarUrl || null) : null;
+                                                        const updatedUser = {
+                                                            ...currentUser,
+                                                            password: wizardPassword,
+                                                            avatar: chosenAvatar,
+                                                            isFirstLogin: false
+                                                        };
+
+                                                        setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
+                                                        setCurrentUser(updatedUser);
+                                                        localStorage.setItem('ap_currentUser', JSON.stringify(updatedUser));
+                                                        if (window.supabase) {
+                                                            await window.supabase.updateUser(currentUser.id, {
+                                                                password: wizardPassword,
+                                                                avatar: chosenAvatar,
+                                                                is_first_login: false
+                                                            }).catch(e => console.error('Supabase sync error:', e));
+                                                        }
+                                                        showToast('Perfil configurado com sucesso!', 'success');
+                                                    }}
+                                                    className="w-full py-3.5 rounded-xl bg-brandAccent text-white font-bold text-[11px] tracking-wider shadow-lg hover:shadow-[0_0_30px_rgba(59,130,246,0.2)] hover:brightness-110 active:scale-[0.98] transition-all mt-auto"
+                                                >
+                                                    CONFIGURAR E ENTRAR
+                                                </button>
                                             </div>
-
-                                            <button
-                                                type="button"
-                                                onClick={async () => {
-                                                    if (wizardPassword.length < 4) {
-                                                        setWizardPasswordError('A senha deve ter pelo menos 4 caracteres.');
-                                                        return;
-                                                    }
-                                                    if (wizardPassword !== wizardConfirmPassword) {
-                                                        setWizardPasswordError('As senhas não coincidem.');
-                                                        return;
-                                                    }
-
-                                                    let chosenAvatar = null;
-                                                    if (wizardAvatarType === 'custom') {
-                                                        chosenAvatar = wizardCustomAvatarUrl || null;
-                                                    }
-
-                                                    // Save user details
-                                                    const updatedUser = {
-                                                        ...currentUser,
-                                                        password: wizardPassword,
-                                                        avatar: chosenAvatar,
-                                                        isFirstLogin: false
-                                                    };
-
-                                                    setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
-                                                    setCurrentUser(updatedUser);
-                                                    localStorage.setItem('ap_currentUser', JSON.stringify(updatedUser));
-                                                    showToast('Perfil configurado com sucesso!', 'success');
-                                                }}
-                                                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-brandAccent to-brandViolet text-white font-bold text-xs tracking-wider shadow-lg hover:shadow-neon-violet hover:brightness-110 active:scale-[0.98] transition-all"
-                                            >
-                                                SALVAR CONFIGURAÃ‡Ã•ES E NAVEGAR
-                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -1837,7 +1924,7 @@
                             <header className="flex items-center justify-between gap-4 py-3 lg:py-4 border-b border-white/5 select-none z-30 relative">
                                 <div className="flex items-center gap-1 font-sans text-3xl lg:text-4xl font-extrabold tracking-tight drop-shadow-[0_0_10px_rgba(59,130,246,0.2)]">
                                     <span style={{ color: 'var(--logo-text-color)' }} className="font-black tracking-tighter">
-                                        ALMEIDA
+                                        {sidebarCollapsed ? 'A' : 'ALMEIDA'}
                                     </span>
                                     <span style={{ color: 'var(--logo-plus-color)' }} className="font-black text-4xl lg:text-5xl drop-shadow-[0_0_15px_rgba(229,71,17,0.4)]">+</span>
                                 </div>
@@ -1861,7 +1948,7 @@
                                     setSidebarCollapsed(!sidebarCollapsed);
                                     localStorage.setItem('ap_sidebar_collapsed', JSON.stringify(!sidebarCollapsed));
                                 }}
-                                className="hidden lg:flex fixed bottom-6 left-6 w-12 h-12 rounded-full bg-gradient-to-r from-brandAccent to-brandViolet text-white shadow-neon-blue hover:shadow-neon-violet items-center justify-center z-40 transition-all duration-300 hover:scale-110 active:scale-95"
+                                className="hidden lg:flex fixed bottom-6 left-6 w-12 h-12 rounded-full bg-brandAccent text-white shadow-neon-blue hover:shadow-neon-blue items-center justify-center z-40 transition-all duration-300 hover:scale-110 active:scale-95"
                                 title={sidebarCollapsed ? 'Expandir Menu' : 'Recolher Menu'}
                             >
                                 <Icon name={sidebarCollapsed ? 'chevronRight' : 'chevronLeft'} className="w-6 h-6" />
@@ -1896,6 +1983,7 @@
                                         <button
                                             onClick={() => setCurrentRoute('settings')}
                                             className={`w-full px-4 py-3 rounded-xl flex ${sidebarCollapsed ? 'justify-center' : ''} items-center gap-3 text-sm font-semibold transition-all duration-200 ${currentRoute === 'settings' ? 'bg-brandEmerald/15 text-brandEmerald border border-brandEmerald/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                                            style={currentRoute === 'settings' ? { borderLeft: '3px solid #10B981', borderTopColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: 'transparent' } : {}}
                                             title={sidebarCollapsed ? 'Configurações' : ''}
                                         >
                                             <Icon name="user" className="w-5 h-5 shrink-0" />
@@ -1905,7 +1993,8 @@
                                         {currentUser.role === 'admin' && (
                                             <button
                                                 onClick={() => setCurrentRoute('admin')}
-                                                className={`w-full px-4 py-3 rounded-xl flex ${sidebarCollapsed ? 'justify-center' : ''} items-center gap-3 text-sm font-semibold transition-all duration-200 ${currentRoute === 'admin' ? 'bg-brandViolet/15 text-brandViolet border border-brandViolet/20 shadow-neon-violet' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                                                className={`w-full px-4 py-3 rounded-xl flex ${sidebarCollapsed ? 'justify-center' : ''} items-center gap-3 text-sm font-semibold transition-all duration-200 ${currentRoute === 'admin' ? 'bg-brandAccent/12 text-white border border-brandAccent/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                                                style={currentRoute === 'admin' ? { borderLeft: '3px solid #E54711', borderTopColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: 'transparent' } : {}}
                                                 title={sidebarCollapsed ? 'Painel Admin' : ''}
                                             >
                                                 <Icon name="settings" className="w-5 h-5 shrink-0" />
@@ -1918,8 +2007,9 @@
                                                 setCurrentRoute('hub');
                                                 setSearchQuery('');
                                             }}
-                                            className={`w-full px-4 py-3 rounded-xl flex ${sidebarCollapsed ? 'justify-center' : ''} items-center gap-3 text-sm font-semibold transition-all duration-200 ${currentRoute === 'hub' ? 'bg-brandAccent/15 text-brandAccent border border-brandAccent/20 shadow-neon-blue' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                                            title={sidebarCollapsed ? 'Iní­cio / Hub' : ''}
+                                                className={`w-full px-4 py-3 rounded-xl flex ${sidebarCollapsed ? 'justify-center' : ''} items-center gap-3 text-sm font-semibold transition-all duration-200 ${currentRoute === 'hub' ? 'bg-brandAccent/12 text-white border border-brandAccent/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                                                style={currentRoute === 'hub' ? { borderLeft: '3px solid #E54711', borderTopColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: 'transparent' } : {}}
+                                                title={sidebarCollapsed ? 'Iní­cio / Hub' : ''}
                                         >
                                             <Icon name="home" className="w-5 h-5 shrink-0" />
                                             {!sidebarCollapsed && <span>Iní­cio / Hub</span>}
@@ -1929,8 +2019,9 @@
                                             onClick={() => {
                                                 setCurrentRoute('acessos');
                                             }}
-                                            className={`w-full px-4 py-3 rounded-xl flex ${sidebarCollapsed ? 'justify-center' : ''} items-center gap-3 text-sm font-semibold transition-all duration-200 ${currentRoute === 'acessos' ? 'bg-brandViolet/15 text-brandViolet border border-brandViolet/20 shadow-neon-violet' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                                            title={sidebarCollapsed ? 'Meus Acessos' : ''}
+                                                className={`w-full px-4 py-3 rounded-xl flex ${sidebarCollapsed ? 'justify-center' : ''} items-center gap-3 text-sm font-semibold transition-all duration-200 ${currentRoute === 'acessos' ? 'bg-brandAccent/12 text-white border border-brandAccent/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                                                style={currentRoute === 'acessos' ? { borderLeft: '3px solid #E54711', borderTopColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: 'transparent' } : {}}
+                                                title={sidebarCollapsed ? 'Meus Acessos' : ''}
                                         >
                                             <Icon name="key" className="w-5 h-5 shrink-0" />
                                             {!sidebarCollapsed && <span>Meus Acessos</span>}
@@ -1986,302 +2077,11 @@
                                 </aside>
 
 
+{/* ======================================================== */}
+                                {/*                      ADMIN PANEL                       */}
                                 {/* ======================================================== */}
-                                {/*                     2. MAIN CATALOG HUB                  */}
-                                {/* ======================================================== */}
-                                {currentRoute === 'hub' && (
-                                    <main className="flex-1 flex flex-col gap-6 min-w-0">
-
-                                        {/* Lembrete Financeiro PIX */}
-                                        {currentUser && currentUser.dia_vencimento && (
-                                            (() => {
-                                                const today = new Date().getDate();
-                                                const due = currentUser.dia_vencimento;
-                                                const diff = due - today;
-                                                // Alert if due today, late, or within 3 days
-                                                const shouldAlert = (diff <= 3 && diff >= 0) || (today > due && today - due < 10);
-
-                                                if (!shouldAlert) return null;
-
-                                                return (
-                                                    <div onClick={() => setCurrentRoute('financeiro')} className="cursor-pointer glass-panel rounded-xl p-3 bg-gradient-to-r from-brandRose/20 to-red-900/20 border border-brandRose/30 flex items-center justify-between shadow-neon-glow hover:brightness-110 transition-all">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="p-2 rounded-full bg-brandRose/20 text-brandRose">
-                                                                <Icon name="support" className="w-5 h-5" />
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-xs font-bold text-white uppercase tracking-wider">Aviso de Fatura</p>
-                                                                <p className="text-[10px] text-slate-300">Seu acesso vence dia {due}. Clique aqui para ver o PIX.</p>
-                                                            </div>
-                                                        </div>
-                                                        <Icon name="chevronRight" className="w-5 h-5 text-brandRose" />
-                                                    </div>
-                                                );
-                                            })()
-                                        )}
-
-                                        {/* Search Input Mobile Only */}
-                                        <div className="relative w-full md:hidden">
-                                            <input
-                                                type="text"
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                                placeholder="Pesquisar filmes no catalogo..."
-                                                className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/35 border border-white/5 text-sm focus:outline-none focus:border-brandAccent transition-all duration-200 text-white placeholder-slate-500"
-                                            />
-                                            <Icon name="search" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                                        </div>
-
-                                        {/* Channel Selector Bar (Chips) */}
-                                        <div className="w-full overflow-x-auto pb-2 custom-scrollbar">
-                                            <div className="flex gap-4 min-w-max">
-                                                {/* "Todos os Canais" (All) Button */}
-                                                <button
-                                                    onClick={() => {
-                                                        setActivePlatformId('all');
-                                                        setIsPlaying(false);
-                                                    }}
-                                                    className={`flex items-center gap-2 px-5 py-3 rounded-full transition-all duration-300 border whitespace-nowrap ${activePlatformId === 'all'
-                                                        ? 'bg-white/10 border-white/20 text-white shadow-md'
-                                                        : 'bg-transparent border-white/5 text-slate-400 hover:bg-white/5 hover:text-white'
-                                                        }`}
-                                                >
-                                                    <Icon name="grid" className="w-5 h-5" />
-                                                </button>
-
-                                                {platforms.filter(p => p.enabled).map(p => {
-                                                    const hasAccess = currentUser.role === 'admin' || currentUser.platforms.includes(p.id);
-                                                    const isActive = activePlatformId === p.id;
-
-                                                    return (
-                                                        <button
-                                                            key={p.id}
-                                                            onClick={() => {
-                                                                setActivePlatformId(p.id);
-                                                                setIsPlaying(false);
-                                                            }}
-                                                            className={`flex items-center gap-2 px-5 py-3 rounded-full transition-all duration-300 border whitespace-nowrap ${isActive
-                                                                ? `bg-gradient-to-r ${p.color} border-white/20 text-white shadow-md`
-                                                                : 'bg-transparent border-white/5 text-slate-400 hover:bg-white/5 hover:text-white'
-                                                                } ${!hasAccess ? 'opacity-40 hover:opacity-50' : ''}`}
-                                                        >
-                                                            {!hasAccess && (
-                                                                <div className="absolute top-2 right-2 p-1 rounded-full bg-black/60 border border-white/10 text-yellow-500 hidden">
-                                                                    <Icon name="lock" className="w-2.5 h-2.5" />
-                                                                </div>
-                                                            )}
-
-                                                            <SafeLogo logo={p.logo} name={p.name} className="h-10 max-w-[100px] object-contain rounded" />
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-
-                                        {/* Catalog Lockout Screen / Access Check */}
-                                        {activePlatformId !== 'all' && !(currentUser.role === 'admin' || currentUser.platforms.includes(activePlatformId)) ? (
-                                            <div className="glass-panel rounded-3xl p-12 text-center flex flex-col items-center justify-center relative overflow-hidden min-h-[350px]">
-                                                <div className="absolute inset-0 bg-brandAccent/5 blur-3xl pointer-events-none" />
-                                                <div className="p-4 rounded-full bg-brandViolet/10 text-brandViolet border border-brandViolet/10 mb-4">
-                                                    <Icon name="lock" className="w-10 h-10" />
-                                                </div>
-                                                <h3 className="text-lg font-extrabold text-white">Streaming Bloqueado</h3>
-                                                <p className="text-xs text-slate-400 mt-2 max-w-md mx-auto leading-relaxed">
-                                                    Você não possui este plano ativado na sua conta. Peça a liberação ao administrador no WhatsApp.
-                                                </p>
-                                                <a
-                                                    href={`https://wa.me/5563999766887?text=Olá%20Almeida,%20gostaria%20de%20ativar%20acesso%20ao%20streaming%20${platforms.find(p => p.id === activePlatformId)?.name}`}
-                                                    target="_blank"
-                                                    className="mt-6 px-6 py-3 rounded-xl bg-brandAccent text-white text-xs font-bold tracking-wide shadow-lg hover:shadow-neon-blue transition-all duration-200"
-                                                >
-                                                    Solicitar Acesso ao Admin
-                                                </a>
-                                            </div>
-                                        ) : (
-                                            /* ACTIVE CHANNEL CATALOG LOADED */
-                                            <div className="flex flex-col gap-6">
-
-                                                {/* Hero backdrop showcase banner */}
-                                                {heroMovie && (
-                                                    <div
-                                                        className="rounded-3xl relative overflow-hidden h-[400px] bg-cover bg-center border border-white/10 flex flex-col justify-end p-6 md:p-8"
-                                                        style={{ backgroundImage: `linear-gradient(to top, rgba(11, 15, 25, 0.95) 20%, rgba(11, 15, 25, 0.4) 60%, transparent 100%), url(${heroMovie.backdrop_path})` }}
-                                                    >
-                                                        {isPlaying && (
-                                                            <div className="absolute top-4 left-6 right-6 p-3 rounded-xl bg-black/75 backdrop-blur border border-white/5 flex items-center justify-between gap-4 text-[11px] font-mono text-slate-300 z-20">
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className="w-2 h-2 rounded-full bg-brandRose animate-pulse" />
-                                                                    <span className="font-bold tracking-wide text-brandRose uppercase text-[9px]">Transmitindo</span>
-                                                                </div>
-                                                                <span className="font-bold text-white truncate max-w-xs">{heroMovie.title}</span>
-                                                                <div className="flex items-center gap-2">
-                                                                    <span>{playbackTime.current}</span>
-                                                                    <div className="w-24 bg-white/20 h-1 rounded-full overflow-hidden">
-                                                                        <div className="bg-brandAccent h-full rounded-full transition-all duration-300" style={{ width: `${playbackProgress}%` }} />
-                                                                    </div>
-                                                                    <span>{playbackTime.total}</span>
-                                                                </div>
-                                                            </div>
-                                                        )}
-
-                                                        <div className="max-w-xl relative z-10">
-                                                            <div className="flex items-center gap-3 mb-2 flex-wrap">
-                                                                <span className="text-[9px] font-extrabold uppercase bg-brandAccent/20 text-brandAccent px-2.5 py-0.5 rounded border border-brandAccent/20 tracking-wider">
-                                                                    {getMovieProvider(heroMovie)?.name || 'ALMEIDA+'}
-                                                                </span>
-                                                                <span className="text-xs text-yellow-500 font-bold inline-flex items-center gap-1">
-                                                                    <Icon name="star" className="w-3.5 h-3.5" />
-                                                                    {heroMovie.vote_average?.toFixed(1) || '8.5'}
-                                                                </span>
-                                                            </div>
-
-                                                            <h3 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight mb-2 uppercase">
-                                                                {heroMovie.title}
-                                                            </h3>
-
-                                                            <p className="text-xs text-slate-300 line-clamp-3 leading-relaxed mb-6">
-                                                                {heroMovie.overview || 'Sinopse oficial do TMDB. Explore e assista ao título direto na plataforma correspondente.'}
-                                                            </p>
-
-                                                            <div className="flex items-center gap-3 flex-wrap">
-                                                                <a
-                                                                    href={getMovieProvider(heroMovie)?.url || 'https://google.com'}
-                                                                    target="_blank"
-                                                                    rel="noreferrer"
-                                                                    onClick={() => {
-                                                                        handleWatchMovie(heroMovie);
-                                                                    }}
-                                                                    className="px-6 py-3 rounded-xl bg-brandAccent hover:bg-brandAccent/90 font-bold text-xs text-white tracking-wider flex items-center gap-2 shadow-lg hover:shadow-neon-blue active:scale-[0.98] transition-all duration-200"
-                                                                >
-                                                                    <Icon name="play" className="w-4 h-4 fill-current" />
-                                                                    <span>ASSISTIR AGORA</span>
-                                                                </a>
-
-                                                                <button
-                                                                    onClick={() => {
-                                                                        const isStarred = myList.includes(heroMovie.id);
-                                                                        if (isStarred) {
-                                                                            setMyList(prev => prev.filter(id => id !== heroMovie.id));
-                                                                            if (window.supabase) window.supabase.removeFavorite(currentUser.id, heroMovie.id);
-                                                                            showToast('Removido da sua lista', 'info');
-                                                                        } else {
-                                                                            setMyList(prev => [...prev, heroMovie.id]);
-                                                                            if (window.supabase) window.supabase.addFavorite(currentUser.id, heroMovie.id, heroMovie.title);
-                                                                            showToast('Salvo na sua lista!', 'success');
-                                                                        }
-                                                                    }}
-                                                                    className="px-5 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs border border-white/10 flex items-center gap-2 transition-all duration-200"
-                                                                >
-                                                                    {myList.includes(heroMovie.id) ? (
-                                                                        <>
-                                                                            <Icon name="check" className="w-4 h-4 text-brandEmerald" />
-                                                                            <span>SALVO</span>
-                                                                        </>
-                                                                    ) : (
-                                                                        <>
-                                                                            <Icon name="plus" className="w-4 h-4" />
-                                                                            <span>MINHA LISTA</span>
-                                                                        </>
-                                                                    )}
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* Movie Catalog Grid or Rows Slider */}
-                                                <div>
-                                                    {searchQuery.trim() ? (
-                                                        <React.Fragment>
-                                                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">
-                                                                Resultados da busca por "{searchQuery}"
-                                                            </h3>
-                                                            {isLoadingMovies ? (
-                                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                                                    {[1, 2, 3, 4].map(idx => (
-                                                                        <div key={idx} className="h-40 rounded-2xl bg-white/5 animate-pulse" />
-                                                                    ))}
-                                                                </div>
-                                                            ) : movies.length === 0 ? (
-                                                                <div className="text-center py-12 text-slate-500 font-bold text-sm">
-                                                                    Nenhum resultado encontrado no catálogo.
-                                                                </div>
-                                                            ) : (
-                                                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                                                    {movies.map(m => (
-                                                                        <div
-                                                                            key={m.id}
-                                                                            onClick={() => setSelectedMovie(m)}
-                                                                            className="glass-panel rounded-2xl overflow-hidden group cursor-pointer hover:border-brandAccent/40 transition-all duration-300 hover:scale-[1.02]"
-                                                                        >
-                                                                            <div className="h-32 overflow-hidden relative">
-                                                                                <img src={m.backdrop_path} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                                                                                <div className="absolute top-2 right-2 px-2 py-0.5 rounded bg-black/60 text-[10px] font-bold text-yellow-500 border border-white/5 inline-flex items-center gap-1">
-                                                                                    <Icon name="star" className="w-3 h-3" />
-                                                                                    {m.vote_average?.toFixed(1) || '8.0'}
-                                                                                </div>
-                                                                            </div>
-                                                                            <div className="p-3">
-                                                                                <h4 className="text-[11px] font-extrabold text-white truncate uppercase tracking-wide">{m.title}</h4>
-                                                                                <p className="text-[9px] text-slate-500 mt-1">{m.release_date ? m.release_date.split('-')[0] : '2024'}</p>
-                                                                            </div>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                        </React.Fragment>
-                                                    ) : (
-                                                        <div className="flex flex-col gap-8">
-                                                            {isLoadingMovies ? (
-                                                                <div className="space-y-8 animate-pulse">
-                                                                    {[1, 2].map(idx => (
-                                                                        <div key={idx} className="space-y-3">
-                                                                            <div className="h-4 w-32 bg-white/5 rounded" />
-                                                                            <div className="flex gap-4">
-                                                                                {[1, 2, 3, 4].map(s => (
-                                                                                    <div key={s} className="w-48 h-36 bg-white/5 rounded-2xl" />
-                                                                                ))}
-                                                                            </div>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            ) : (
-                                                                <React.Fragment>
-                                                                    {myListMovies.length > 0 && (
-                                                                        <MovieRow
-                                                                            title="Minha Lista de Favoritos"
-                                                                            moviesList={myListMovies}
-                                                                            onSelectMovie={setSelectedMovie}
-                                                                            getMovieProvider={getMovieProvider}
-                                                                        />
-                                                                    )}
-                                                                    {catalogSections.map(section => (
-                                                                        <MovieRow
-                                                                            key={section.title}
-                                                                            title={section.title}
-                                                                            moviesList={section.moviesList}
-                                                                            onSelectMovie={setSelectedMovie}
-                                                                            getMovieProvider={getMovieProvider}
-                                                                        />
-                                                                    ))}
-                                                                </React.Fragment>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                            </div>
-                                        )}
-
-                                    </main>
-                                )}
-
-
-                                {/* ======================================================== */}
-                                {/*                     3. MEUS ACESSOS                      */}
-                                {/* ======================================================== */}
-                                {currentRoute === 'acessos' && (
-                                    <main className="flex-1 flex flex-col gap-6 min-w-0">
+                                {currentRoute === 'admin' && (
+                                    <main className="flex-1 flex flex-col gap-6 min-w-0 route-fade">
                                         <div className="glass-panel rounded-2xl p-6 flex flex-col gap-4">
                                             <h2 className="text-2xl font-extrabold text-white tracking-tight">Meus Acessos</h2>
                                             <p className="text-sm text-slate-400">Suas credenciais para os serviços de streaming liberados.</p>
@@ -2310,7 +2110,7 @@
                                                                     <div>
                                                                         <label className="text-[10px] text-slate-500 uppercase tracking-wider font-bold block mb-1">Senha de Acesso</label>
                                                                         <div className="flex items-center justify-between gap-2 bg-black/40 px-3 py-2 rounded-lg border border-white/10">
-                                                                            <span className="text-xs text-brandViolet font-mono truncate">
+                                                                            <span className="text-xs text-brandAccent font-mono truncate">
                                                                                 {revealedPasswords[p.id] ? p.password : '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'}
                                                                             </span>
                                                                             <div className="flex gap-1.5">
@@ -2355,7 +2155,7 @@
                                                 <span className="text-[10px] text-brandEmerald font-bold mt-0.5 block">Navegando no Almeida+</span>
                                             </div>
 
-                                            <div className="glass-panel rounded-2xl p-5 border-l-4 border-l-brandViolet shadow-neon-violet">
+                                            <div className="glass-panel rounded-2xl p-5 border-l-4 border-l-brandAccent shadow-neon-blue">
                                                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Streamings Integrados</p>
                                                 <p className="text-2xl font-black text-white mt-1 font-mono">{platforms.filter(p => p.enabled).length} Provedores</p>
                                                 <span className="text-[10px] text-slate-400 mt-0.5 block">TMDb Região BR</span>
@@ -2375,7 +2175,7 @@
                                             <button
                                                 onClick={() => setAdminTab('members')}
                                                 className={`px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 border ${adminTab === 'members'
-                                                    ? 'bg-brandViolet/10 border-brandViolet text-brandViolet shadow-neon-violet font-extrabold'
+                                                    ? 'bg-brandAccent/10 border-brandAccent text-brandAccent shadow-neon-blue font-extrabold'
                                                     : 'bg-transparent border-white/5 text-slate-400 hover:text-white'
                                                     }`}
                                             >
@@ -2387,7 +2187,7 @@
                                             <button
                                                 onClick={() => setAdminTab('providers')}
                                                 className={`px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 border ${adminTab === 'providers'
-                                                    ? 'bg-brandViolet/10 border-brandViolet text-brandViolet shadow-neon-violet font-extrabold'
+                                                    ? 'bg-brandAccent/10 border-brandAccent text-brandAccent shadow-neon-blue font-extrabold'
                                                     : 'bg-transparent border-white/5 text-slate-400 hover:text-white'
                                                     }`}
                                             >
@@ -2404,8 +2204,8 @@
                                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                                     {users.filter(u => u.role !== 'admin').map(u => {
                                                         return (
-                                                            <div key={u.id} className="glass-panel rounded-2xl p-5 border border-white/5 relative overflow-hidden flex flex-col justify-between gap-4 hover:border-brandViolet/30 transition-all duration-300">
-                                                                <div className="absolute top-0 right-0 w-24 h-24 bg-brandViolet/5 rounded-full blur-xl pointer-events-none" />
+                                                            <div key={u.id} className="glass-panel rounded-2xl p-5 border border-white/5 relative overflow-hidden flex flex-col justify-between gap-4 hover:border-brandAccent/30 transition-all duration-300">
+                                                                <div className="absolute top-0 right-0 w-24 h-24 bg-brandAccent/5 rounded-full blur-xl pointer-events-none" />
 
                                                                 {/* Member Header */}
                                                                 <div className="flex items-center gap-3">
@@ -2533,7 +2333,7 @@
 
                                                         return (
                                                             <div key={p.id} className={`glass-panel rounded-3xl p-6 border flex flex-col justify-between gap-5 transition-all duration-300 relative ${p.enabled ? 'border-white/5 hover:border-brandAccent/30' : 'border-white/5 opacity-50'}`}>
-                                                                <div className="absolute top-0 right-0 w-24 h-24 bg-brandAccent/5 rounded-full blur-xl pointer-events-none" />
+                                                                <div className="absolute top-0 right-0 w-24 h-24 bg-brandAccent/4 rounded-full blur-xl pointer-events-none" />
 
                                                                 {/* Header: Logo, Nome, Status e Lixeira */}
                                                                 <div className="flex justify-between items-center gap-3">
@@ -2774,7 +2574,7 @@
 
                                                             <button
                                                                 type="submit"
-                                                                className="w-full py-3 rounded-xl bg-gradient-to-r from-brandAccent to-brandViolet text-white font-bold text-xs tracking-wider uppercase hover:brightness-110 shadow-neon-violet transition-all"
+                                                                className="w-full py-3 rounded-xl bg-brandAccent text-white font-bold text-xs tracking-wider uppercase hover:brightness-110 shadow-neon-blue transition-all"
                                                             >
                                                                 Cadastrar Provedor
                                                             </button>
@@ -2790,7 +2590,7 @@
                                 {/*                     FINANCEIRO / PIX                     */}
                                 {/* ======================================================== */}
                                 {currentRoute === 'financeiro' && (
-                                    <main className="flex-1 flex flex-col gap-6 min-w-0">
+                                    <main className="flex-1 flex flex-col gap-6 min-w-0 route-fade">
                                         <div className="glass-panel rounded-2xl p-6 flex flex-col gap-4">
                                             <h2 className="text-2xl font-extrabold text-white tracking-tight">Painel Financeiro</h2>
                                             <p className="text-sm text-slate-400">Pague sua fatura via PIX para não perder o acesso.</p>
@@ -2873,18 +2673,13 @@
 
                                                 {/* Actions Row */}
                                                 <div className="flex items-center gap-3 pt-4 border-t border-white/5 flex-wrap">
-                                                    <a
-                                                        href={getMovieProvider(selectedMovie)?.url || 'https://google.com'}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        onClick={() => {
-                                                            handleWatchMovie(selectedMovie, true);
-                                                        }}
-                                                        className="flex-1 min-w-[150px] py-3 rounded-xl bg-brandAccent hover:bg-brandAccent/90 font-bold text-xs text-white tracking-wider flex items-center justify-center gap-2 shadow-lg hover:shadow-neon-blue transition"
+                                                    <button
+                                                        onClick={() => handleOpenTrailer(selectedMovie, true)}
+                                                        className="flex-1 min-w-[150px] py-3 rounded-xl bg-brandAccent hover:brightness-110 font-bold text-xs text-white tracking-wider flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all duration-200"
                                                     >
                                                         <Icon name="play" className="w-4 h-4 fill-current" />
-                                                        <span>ASSISTIR NO CANAL</span>
-                                                    </a>
+                                                        <span>TRAILER + ASSISTIR</span>
+                                                    </button>
 
                                                     {/* Credentials Copy Button */}
                                                     <button
@@ -2902,7 +2697,7 @@
                                                                 showToast('Credencial ainda nao cadastrada no admin.', 'error');
                                                             }
                                                         }}
-                                                        className="px-5 py-3 rounded-xl bg-brandViolet/15 hover:bg-brandViolet/25 text-brandViolet font-bold text-xs border border-brandViolet/20 flex items-center gap-2 transition"
+                                                        className="px-5 py-3 rounded-xl bg-brandAccent/15 hover:bg-brandAccent/25 text-brandAccent font-bold text-xs border border-brandAccent/20 flex items-center gap-2 transition"
                                                         title="Copiar senha da plataforma"
                                                     >
                                                         <Icon name="copy" className="w-4 h-4" />
@@ -2959,7 +2754,7 @@
                                                     <div className="relative shrink-0">
                                                         {settingsAvatarUrl ? (
                                                             settingsAvatarUrl === 'NONE' ? (
-                                                                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-brandAccent/25 to-brandViolet/25 border-2 border-brandAccent/15 text-white flex items-center justify-center font-black uppercase text-3xl">
+                                                                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-brandAccent/25 to-brandAccent/25 border-2 border-brandAccent/15 text-white flex items-center justify-center font-black uppercase text-3xl">
                                                                     {currentUser.name.substring(0, 2).toUpperCase()}
                                                                 </div>
                                                             ) : (
@@ -3058,20 +2853,20 @@
                                                                 return;
                                                             }
 
-                                                            if (Object.keys(updates).length > 0 && window.supabase) {
-                                                                const res = await window.supabase.updateUser(currentUser.id, updates);
-                                                                if (res) {
-                                                                    setCurrentUser(res);
-                                                                    localStorage.setItem('ap_currentUser', JSON.stringify(res));
-                                                                    const updatedUsers = users.map(u => u.id === res.id ? res : u);
-                                                                    setUsers(updatedUsers);
-                                                                    localStorage.setItem('ap_users', JSON.stringify(updatedUsers));
-                                                                    showToast('Configurações salvas com sucesso!', 'success');
-                                                                    setSettingsPassword('');
-                                                                    setSettingsAvatarUrl('');
-                                                                } else {
-                                                                    showToast('Erro ao salvar.', 'error');
+                                                            if (Object.keys(updates).length > 0) {
+                                                                const updatedUser = { ...currentUser, ...updates };
+                                                                if (window.supabase) {
+                                                                    const res = await window.supabase.updateUser(currentUser.id, updates);
+                                                                    if (res) Object.assign(updatedUser, res);
                                                                 }
+                                                                setCurrentUser(updatedUser);
+                                                                localStorage.setItem('ap_currentUser', JSON.stringify(updatedUser));
+                                                                const updatedUsers = users.map(u => u.id === updatedUser.id ? updatedUser : u);
+                                                                setUsers(updatedUsers);
+                                                                localStorage.setItem('ap_users', JSON.stringify(updatedUsers));
+                                                                showToast('Configurações salvas com sucesso!', 'success');
+                                                                setSettingsPassword('');
+                                                                setSettingsAvatarUrl('');
                                                             } else {
                                                                 showToast('Nenhuma alteração para salvar.', 'info');
                                                             }
@@ -3080,7 +2875,7 @@
                                                         }
                                                         setIsSavingSettings(false);
                                                     }}
-                                                    className={`px-6 py-3 rounded-xl font-bold text-sm shadow-neon-blue transition-all ${isSavingSettings ? 'bg-brandAccent/50 text-white/50 cursor-not-allowed' : 'bg-brandAccent text-white hover:bg-blue-500'}`}
+                                                    className={`px-6 py-3 rounded-xl font-bold text-sm shadow-neon-blue transition-all ${isSavingSettings ? 'bg-brandAccent/40 text-white/50 cursor-not-allowed' : 'bg-brandAccent text-white hover:brightness-110'}`}
                                                 >
                                                     {isSavingSettings ? 'Salvando...' : 'Salvar Alterações'}
                                                 </button>
@@ -3093,7 +2888,7 @@
                             {/* Mobile Bottom Navigation */}
                             <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#050B14]/95 backdrop-blur-xl border-t border-white/10 z-50 px-2 py-3 flex justify-around items-center shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
                                 {currentUser.role === 'admin' && (
-                                    <button onClick={() => setCurrentRoute('admin')} className={`flex flex-col items-center gap-1 ${currentRoute === 'admin' ? 'text-brandViolet' : 'text-slate-500'}`}>
+                                    <button onClick={() => setCurrentRoute('admin')} className={`flex flex-col items-center gap-1 ${currentRoute === 'admin' ? 'text-brandAccent' : 'text-slate-500'}`}>
                                         <Icon name="settings" className="w-5 h-5" />
                                         <span className="text-[9px] font-bold">Admin</span>
                                     </button>
@@ -3102,7 +2897,7 @@
                                     <Icon name="home" className="w-5 h-5" />
                                     <span className="text-[9px] font-bold">Início</span>
                                 </button>
-                                <button onClick={() => setCurrentRoute('acessos')} className={`flex flex-col items-center gap-1 ${currentRoute === 'acessos' ? 'text-brandViolet' : 'text-slate-500'}`}>
+                                <button onClick={() => setCurrentRoute('acessos')} className={`flex flex-col items-center gap-1 ${currentRoute === 'acessos' ? 'text-brandAccent' : 'text-slate-500'}`}>
                                     <Icon name="key" className="w-5 h-5" />
                                     <span className="text-[9px] font-bold">Acessos</span>
                                 </button>
@@ -3117,6 +2912,40 @@
                             </nav>
 
                             {/* --- FOOTER MOVIDO PARA O MENU --- */}
+                        </div>
+                    )}
+
+                    {/* === TRAILER MODAL === */}
+                    {trailerModal && (
+                        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+                            style={{ background: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(8px)' }}
+                            onClick={(e) => { if (e.target === e.currentTarget) setTrailerModal(null); }}
+                        >
+                            <div className="w-full max-w-4xl flex flex-col gap-0" style={{ background: '#0a0a0d', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                                    <div className="flex flex-col">
+                                        <span style={{ fontSize: '11px', color: '#E54711', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em' }}>Trailer Oficial</span>
+                                        <span style={{ fontSize: '16px', color: '#fff', fontWeight: 800, marginTop: '2px' }}>{trailerModal.movie.title}</span>
+                                    </div>
+                                    <button onClick={() => setTrailerModal(null)} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '8px', color: '#fff', cursor: 'pointer', lineHeight: 0 }}>
+                                        <Icon name="x" className="w-5 h-5" />
+                                    </button>
+                                </div>
+                                <div style={{ position: 'relative', paddingBottom: '56.25%', background: '#000' }}>
+                                    <iframe src={`https://www.youtube.com/embed/${trailerModal.youtubeKey}?autoplay=1&rel=0&modestbranding=1&color=white`} title={`Trailer - ${trailerModal.movie.title}`} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} />
+                                </div>
+                                <div className="flex items-center justify-between px-5 py-4 gap-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                                    <p style={{ fontSize: '12px', color: 'rgba(180,180,180,0.7)' }}>Disponível em <span style={{ color: '#fff', fontWeight: 700 }}>{trailerModal.providerName}</span></p>
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={() => setTrailerModal(null)} style={{ padding: '10px 18px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#ccc', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>Fechar</button>
+                                        {trailerModal.providerUrl && (
+                                            <a href={trailerModal.providerUrl} target="_blank" rel="noreferrer" onClick={() => setTrailerModal(null)} style={{ padding: '10px 22px', borderRadius: '8px', background: '#E54711', color: '#fff', fontSize: '12px', fontWeight: 800, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '7px', boxShadow: '0 4px 16px rgba(229,71,17,0.35)' }}>
+                                                <Icon name="play" className="w-4 h-4" style={{ fill: 'currentColor' }} />ASSISTIR EM {trailerModal.providerName.toUpperCase()}
+                                            </a>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
 
