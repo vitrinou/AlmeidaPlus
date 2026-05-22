@@ -25,6 +25,9 @@
     <!-- Supabase Client -->
     <script src="./supabase-client.js"></script>
 
+    <!-- QRCode.js -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -535,6 +538,21 @@
                     <svg fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className={className}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
+                ),
+                alarm: (
+                    <svg fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className={className}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                ),
+                calendar: (
+                    <svg fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className={className}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                    </svg>
+                ),
+                list: (
+                    <svg fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className={className}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                    </svg>
                 )
             };
             return icons[name] || <span className={className}>?</span>;
@@ -776,6 +794,24 @@
             // Toast/Alert system
             const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
+            // Payment states
+            const [paymentDueDate, setPaymentDueDate] = useState(() => {
+                const saved = localStorage.getItem('ap_payment_' + (currentUser?.id || ''));
+                return saved ? JSON.parse(saved) : null;
+            });
+            const [paymentStatus, setPaymentStatus] = useState(() => {
+                const saved = localStorage.getItem('ap_payment_status_' + (currentUser?.id || ''));
+                return saved ? JSON.parse(saved) : 'pending';
+            });
+            const [paymentAmount, setPaymentAmount] = useState(() => {
+                const saved = localStorage.getItem('ap_payment_amount_' + (currentUser?.id || ''));
+                return saved ? JSON.parse(saved) : 25.00;
+            });
+            const [paymentHistory, setPaymentHistory] = useState(() => {
+                const saved = localStorage.getItem('ap_payment_history_' + (currentUser?.id || ''));
+                return saved ? JSON.parse(saved) : [];
+            });
+
             // Login credentials form
             const [loginEmail, setLoginEmail] = useState('');
             const [loginPassword, setLoginPassword] = useState('');
@@ -800,6 +836,11 @@
             const [showAddPlatform, setShowAddPlatform] = useState(false);
 
             const [loginMarqueePosters, setLoginMarqueePosters] = useState([]);
+
+            const [continueWatching, setContinueWatching] = useState(() => {
+                const saved = localStorage.getItem('ap_continue_watching_' + (currentUser?.id || ''));
+                return saved ? JSON.parse(saved) : [];
+            });
 
             const loginMarqueeItems = React.useMemo(() => {
                 if (loginMarqueePosters.length > 0) return loginMarqueePosters;
@@ -1113,6 +1154,35 @@
                 return () => { cancelled = true; };
             }, [currentRoute]);
 
+            // --- CONTINUE WATCHING PERSISTENCE ---
+            useEffect(() => {
+                if (currentUser) {
+                    localStorage.setItem('ap_continue_watching_' + currentUser.id, JSON.stringify(continueWatching));
+                }
+            }, [continueWatching, currentUser]);
+
+            // --- PIX QR CODE GENERATION ---
+            useEffect(() => {
+                if (currentRoute !== 'financeiro') return;
+                const container = document.getElementById('pix-qr-code');
+                if (!container) return;
+                container.innerHTML = '';
+                try {
+                    if (typeof QRCode !== 'undefined') {
+                        new QRCode(container, {
+                            text: '00020126440014br.gov.bcb.pix0122rodrigodevpro@gmail.com5204000053039865802BR5915RODRIGO ALMEIDA6006PALMAS62070503***6304EE88',
+                            width: 180,
+                            height: 180,
+                            colorDark: '#080A0F',
+                            colorLight: '#ffffff',
+                            correctLevel: QRCode.CorrectLevel.H
+                        });
+                    }
+                } catch(e) {
+                    console.error('QR Code generation error:', e);
+                }
+            }, [currentRoute]);
+
             // --- TRIGGER TOAST ---
             const showToast = (message, type = 'success') => {
                 setToast({ visible: true, message, type });
@@ -1401,6 +1471,81 @@
                         .catch(() => showToast('Nao foi possivel copiar automaticamente.', 'error'));
                 } else {
                     showToast('Copie manualmente: navegador sem clipboard seguro.', 'error');
+                }
+            };
+
+            // --- PAYMENT HELPERS ---
+            const markAsPaid = () => {
+                const today = new Date();
+                const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
+                setPaymentStatus('paid');
+                setPaymentDueDate(nextMonth.toISOString());
+                const newHistory = [...paymentHistory, {
+                    date: today.toISOString(),
+                    amount: paymentAmount,
+                    status: 'paid',
+                    method: 'PIX'
+                }];
+                setPaymentHistory(newHistory);
+                if (currentUser) {
+                    localStorage.setItem('ap_payment_history_' + currentUser.id, JSON.stringify(newHistory));
+                    localStorage.setItem('ap_payment_status_' + currentUser.id, JSON.stringify('paid'));
+                    localStorage.setItem('ap_payment_due_' + currentUser.id, JSON.stringify(nextMonth.toISOString()));
+                } else {
+                    localStorage.setItem('ap_payment_history_', JSON.stringify(newHistory));
+                    localStorage.setItem('ap_payment_status_', JSON.stringify('paid'));
+                    localStorage.setItem('ap_payment_due_', JSON.stringify(nextMonth.toISOString()));
+                }
+                showToast('Pagamento confirmado! Próximo vencimento: ' + nextMonth.toLocaleDateString('pt-BR'), 'success');
+            };
+
+            const downloadCalendarReminder = () => {
+                if (!paymentDueDate) return;
+                const due = new Date(paymentDueDate);
+                const icsContent = [
+                    'BEGIN:VCALENDAR',
+                    'VERSION:2.0',
+                    'PRODID:-//ALMEIDA+//Pagamento//PT-BR',
+                    'BEGIN:VEVENT',
+                    'DTSTART:' + due.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z',
+                    'DTEND:' + due.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z',
+                    'SUMMARY:Pagamento ALMEIDA+ - R$ ' + paymentAmount.toFixed(2),
+                    'DESCRIPTION:Lembrete de pagamento da sua assinatura ALMEIDA+.',
+                    'BEGIN:VALARM',
+                    'TRIGGER:-P1D',
+                    'ACTION:DISPLAY',
+                    'DESCRIPTION:Lembrete: Pagamento ALMEIDA+ amanhã!',
+                    'END:VALARM',
+                    'END:VEVENT',
+                    'END:VCALENDAR'
+                ].join('\r\n');
+                const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'lembrete_almeidapay.ics';
+                link.click();
+                showToast('Arquivo de calendário baixado! Abra no Google Calendar ou Apple Calendar.', 'success');
+            };
+
+            const requestNotificationReminder = () => {
+                if (!('Notification' in window)) {
+                    showToast('Notificações não suportadas neste navegador.', 'error');
+                    return;
+                }
+                if (Notification.permission === 'granted') {
+                    new Notification('ALMEIDA+ Lembrete', {
+                        body: 'Seu pagamento de R$ ' + paymentAmount.toFixed(2) + ' vence em breve!',
+                        icon: './favicon.png'
+                    });
+                } else if (Notification.permission !== 'denied') {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            new Notification('ALMEIDA+ Lembrete', {
+                                body: 'Notificações ativadas! Você receberá lembretes de pagamento.',
+                                icon: './favicon.png'
+                            });
+                        }
+                    });
                 }
             };
 
@@ -2045,6 +2190,42 @@
                                             </div>
                                         )}
 
+                                        {/* === CONTINUE WATCHING === */}
+                                        {continueWatching.length > 0 && !searchQuery && (
+                                            <div className="flex flex-col gap-3 px-4 md:px-0 py-4">
+                                                <div className="flex items-center justify-between">
+                                                    <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2">
+                                                        <svg fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-4 h-4 text-brandAccent"><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" /></svg>
+                                                        Continuar Assistindo
+                                                    </h3>
+                                                    <button onClick={() => { setContinueWatching([]); if (currentUser) localStorage.removeItem('ap_continue_watching_' + currentUser.id); showToast('Lista limpa', 'info'); }} className="text-[9px] text-slate-500 hover:text-brandRose transition-colors font-bold uppercase tracking-wider">
+                                                        Limpar
+                                                    </button>
+                                                </div>
+                                                <div className="flex gap-3 overflow-x-auto pb-2 catalog-row" style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}>
+                                                    {continueWatching.map(item => {
+                                                        const imgSrc = item.poster_path
+                                                            ? (item.poster_path.startsWith('http') ? item.poster_path : `https://image.tmdb.org/t/p/w200${item.poster_path}`)
+                                                            : (item.backdrop_path || '');
+                                                        return (
+                                                            <div key={item.id} onClick={() => {
+                                                                const found = [...movies, ...moviesPopular, ...moviesTrending].find(m => m.id === item.id);
+                                                                if (found) setSelectedMovie(found);
+                                                            }} style={{ scrollSnapAlign: 'start', flexShrink: 0 }} className="w-28 cursor-pointer group relative">
+                                                                <div style={{ aspectRatio: '2/3', background: '#111', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
+                                                                    <img src={imgSrc} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" onError={e => { e.target.style.display = 'none'; }} />
+                                                                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '3px', background: 'rgba(255,255,255,0.1)' }}>
+                                                                        <div style={{ width: (item.progress || 0) + '%', height: '100%', background: '#E54711', borderRadius: '0 2px 0 0', transition: 'width 0.3s' }} />
+                                                                    </div>
+                                                                </div>
+                                                                <p style={{ fontSize: '10px', fontWeight: 700, color: '#fff', marginTop: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</p>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {/* === FILTRO DE PLATAFORMAS === */}
                                         <div className="px-3 md:px-6 py-2 md:py-4 flex items-center gap-2 md:gap-3 overflow-x-auto custom-scrollbar border-b border-white/5 shrink-0">
                                             <button
@@ -2080,6 +2261,42 @@
                                             ))}
                                         </div>
 
+                                        {/* === CATALOG CONTROLS === */}
+                                        {catalogSections.length > 0 && !searchQuery && (
+                                            <div className="flex items-center justify-between gap-3 px-4 md:px-0 flex-wrap">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    {['all', 28, 35, 18, 878, 27, 10751, 9648].map(genreId => {
+                                                        const genreNames = { 'all':'Todos', 28:'Ação', 35:'Comédia', 18:'Drama', 878:'Sci-Fi', 27:'Terror', 10751:'Família', 9648:'Mistério' };
+                                                        return (
+                                                            <button key={genreId} onClick={() => setSelectedGenre(genreId)}
+                                                                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all ${selectedGenre === genreId ? 'bg-brandAccent/10 border-brandAccent/30 text-brandAccent' : 'bg-transparent border-white/5 text-slate-500 hover:text-white hover:border-white/15'}`}
+                                                            >
+                                                                {genreNames[genreId]}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button onClick={() => setCatalogSort(catalogSort === 'rating' ? 'none' : 'rating')}
+                                                        className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 ${catalogSort === 'rating' ? 'text-brandAccent' : 'text-slate-500 hover:text-white'}`}
+                                                    >
+                                                        <Icon name="star" className="w-3 h-3" /> Nota
+                                                    </button>
+                                                    <button onClick={() => setCatalogSort(catalogSort === 'year' ? 'none' : 'year')}
+                                                        className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 ${catalogSort === 'year' ? 'text-brandAccent' : 'text-slate-500 hover:text-white'}`}
+                                                    >
+                                                        Ano
+                                                    </button>
+                                                    <button onClick={() => setCatalogLayout(catalogLayout === 'rows' ? 'grid' : 'rows')}
+                                                        className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-slate-500 hover:text-white transition-all"
+                                                        title={catalogLayout === 'rows' ? 'Visualizar em Grade' : 'Visualizar em Linhas'}
+                                                    >
+                                                        {catalogLayout === 'rows' ? <Icon name="grid" className="w-3.5 h-3.5" /> : <Icon name="list" className="w-3.5 h-3.5" />}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {/* === CATÁLOGO === */}
                                         <div className="flex-1 px-3 md:px-6 py-3 md:py-6 flex flex-col gap-4 md:gap-8 overflow-y-auto custom-scrollbar">
                                             {isLoadingMovies && (
@@ -2106,17 +2323,61 @@
                                                             getMovieProvider={getMovieProvider}
                                                         />
                                                     )}
-                                                    {catalogSections.map(section => (
-                                                        section.moviesList.length > 0 && (
-                                                            <MovieRow
-                                                                key={section.title}
-                                                                title={section.title}
-                                                                moviesList={section.moviesList}
-                                                                onSelectMovie={setSelectedMovie}
-                                                                getMovieProvider={getMovieProvider}
-                                                            />
-                                                        )
-                                                    ))}
+                                                    {catalogSections.map(section => {
+                                                        let filteredMovies = section.moviesList;
+                                                        if (selectedGenre !== 'all') {
+                                                            filteredMovies = filteredMovies.filter(m =>
+                                                                m.genre_ids && m.genre_ids.includes(selectedGenre)
+                                                            );
+                                                        }
+                                                        if (catalogSort === 'rating') {
+                                                            filteredMovies = [...filteredMovies].sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+                                                        } else if (catalogSort === 'year') {
+                                                            filteredMovies = [...filteredMovies].sort((a, b) => {
+                                                                const yearA = parseInt(a.release_date) || 0;
+                                                                const yearB = parseInt(b.release_date) || 0;
+                                                                return yearB - yearA;
+                                                            });
+                                                        }
+                                                        return filteredMovies.length > 0 && (
+                                                            catalogLayout === 'grid' ? (
+                                                                <div key={section.title} className="flex flex-col gap-3">
+                                                                    <div className="flex items-center justify-between gap-3 px-1">
+                                                                        <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest">
+                                                                            {section.title}
+                                                                        </h3>
+                                                                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{filteredMovies.length} titulos</span>
+                                                                    </div>
+                                                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                                                                        {filteredMovies.map(m => {
+                                                                            const provider = getMovieProvider(m);
+                                                                            return (
+                                                                                <div key={m.id} onClick={() => setSelectedMovie(m)}
+                                                                                    className="cursor-pointer group relative" style={{ borderRadius: '8px', overflow: 'hidden' }}>
+                                                                                    <div style={{ aspectRatio: '2/3', background: '#111', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
+                                                                                        <img src={m.poster_path ? (m.poster_path.startsWith('http') ? m.poster_path : `https://image.tmdb.org/t/p/w300${m.poster_path}`) : (m.backdrop_path || '')}
+                                                                                            alt={m.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy"
+                                                                                            onError={e => { e.target.style.display = 'none'; }} />
+                                                                                        {provider && <div style={{ position: 'absolute', top: '6px', left: '6px', background: 'rgba(229,71,17,0.85)', borderRadius: '4px', padding: '2px 6px', fontSize: '8px', fontWeight: 800, color: '#fff', backdropFilter: 'blur(4px)', textTransform: 'uppercase', maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{provider.name}</div>}
+                                                                                        <div style={{ position: 'absolute', top: '6px', right: '6px', background: 'rgba(0,0,0,0.75)', borderRadius: '4px', padding: '2px 6px', fontSize: '10px', fontWeight: 700, color: '#FBBF24', display: 'flex', alignItems: 'center', gap: '3px' }}>★ {m.vote_average?.toFixed(1) || '8.0'}</div>
+                                                                                    </div>
+                                                                                    <p style={{ fontSize: '10px', fontWeight: 700, color: '#fff', marginTop: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.title}</p>
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <MovieRow
+                                                                    key={section.title}
+                                                                    title={section.title}
+                                                                    moviesList={filteredMovies}
+                                                                    onSelectMovie={setSelectedMovie}
+                                                                    getMovieProvider={getMovieProvider}
+                                                                />
+                                                            )
+                                                        );
+                                                    })}
                                                     {movies.length === 0 && !isLoadingMovies && (
                                                         <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
                                                             <div className="w-16 h-16 rounded-2xl bg-brandAccent/10 border border-brandAccent/20 flex items-center justify-center">
@@ -2670,36 +2931,94 @@
                                 {/*                     FINANCEIRO / PIX                     */}
                                 {/* ======================================================== */}
                                 {currentRoute === 'financeiro' && (
-                                    <main className="flex-1 flex flex-col gap-6 min-w-0 route-fade px-4 md:px-6">
+                                    <main className="flex-1 flex flex-col gap-6 min-w-0 route-fade px-4 md:px-6 pb-8">
+                                        {/* === PIX PAYMENT DASHBOARD === */}
                                         <div className="glass-panel rounded-2xl p-6 flex flex-col gap-4">
-                                            <h2 className="text-2xl font-extrabold text-white tracking-tight">Painel Financeiro</h2>
-                                            <p className="text-sm text-slate-400">Pague sua fatura via PIX para não perder o acesso.</p>
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <h2 className="text-2xl font-extrabold text-white tracking-tight">Financeiro</h2>
+                                                    <p className="text-sm text-slate-400 mt-1">Mantenha seu acesso em dia via PIX</p>
+                                                </div>
+                                                <div className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${paymentStatus === 'paid' ? 'bg-brandEmerald/10 border-brandEmerald/20 text-brandEmerald' : paymentStatus === 'overdue' ? 'bg-brandRose/10 border-brandRose/20 text-brandRose' : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'}`}>
+                                                    {paymentStatus === 'paid' ? 'Pago' : paymentStatus === 'overdue' ? 'Vencido' : 'Pendente'}
+                                                </div>
+                                            </div>
 
-                                            {currentUser && currentUser.dia_vencimento ? (
-                                                <div className="mt-6 flex flex-col items-center p-8 bg-black/30 border border-white/5 rounded-2xl max-w-lg mx-auto w-full relative overflow-hidden">
-                                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brandEmerald to-teal-500" />
-                                                    <h3 className="text-lg font-bold text-white mb-2">Fatura Mensal</h3>
-                                                    <p className="text-3xl font-black text-brandEmerald mb-6">
-                                                        R$ {(currentUser.valor_mensal || 25.00).toFixed(2).replace('.', ',')}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                                {/* Left: Payment card */}
+                                                <div className="flex flex-col items-center p-6 bg-black/30 border border-white/5 rounded-2xl relative overflow-hidden">
+                                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brandAccent to-brandRose" />
+                                                    <h3 className="text-sm font-bold text-slate-300 mb-1">Valor Mensal</h3>
+                                                    <p className="text-4xl font-black text-white mb-4">
+                                                        R$ {paymentAmount.toFixed(2).replace('.', ',')}
                                                     </p>
-                                                    <div className="bg-white p-4 rounded-xl shadow-lg mb-6">
-                                                        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent('00020126440014br.gov.bcb.pix0122rodrigodevpro@gmail.com5204000053039865802BR5915RODRIGO ALMEIDA6006PALMAS62070503***6304EE88')}`} alt="QR Code PIX" className="w-48 h-48" />
+                                                    {paymentDueDate && (
+                                                        <div className="flex items-center gap-2 text-xs text-slate-400 mb-4">
+                                                            <Icon name="calendar" className="w-3.5 h-3.5" />
+                                                            <span>Vencimento: {new Date(paymentDueDate).toLocaleDateString('pt-BR')}</span>
+                                                        </div>
+                                                    )}
+
+                                                    {/* PIX QR Code */}
+                                                    <div className="bg-white p-3 rounded-xl shadow-lg mb-4" id="pix-qr-container">
+                                                        <div id="pix-qr-code" style={{ width: 180, height: 180 }}></div>
+                                                    </div>
+                                                    <p className="text-[9px] text-slate-500 font-mono text-center mb-4 max-w-xs break-all select-all">
+                                                        Escaneie o QR Code ou copie o código PIX abaixo
+                                                    </p>
+                                                    <div className="w-full flex flex-col gap-2">
+                                                        <button onClick={() => copyText('00020126440014br.gov.bcb.pix0122rodrigodevpro@gmail.com5204000053039865802BR5915RODRIGO ALMEIDA6006PALMAS62070503***6304EE88', 'Código PIX copiado!')} className="w-full py-3 rounded-xl bg-gradient-to-r from-brandAccent to-brandRose text-white font-bold text-xs tracking-wider hover:brightness-110 transition-all flex items-center justify-center gap-2">
+                                                            <Icon name="copy" className="w-4 h-4" />
+                                                            COPIAR PIX
+                                                        </button>
+                                                        <button onClick={markAsPaid} className="w-full py-3 rounded-xl bg-brandEmerald/10 border border-brandEmerald/20 text-brandEmerald font-bold text-xs tracking-wider hover:bg-brandEmerald/20 transition-all flex items-center justify-center gap-2">
+                                                            <Icon name="check" className="w-4 h-4" />
+                                                            CONFIRMAR PAGAMENTO
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Right: Reminders & History */}
+                                                <div className="flex flex-col gap-4">
+                                                    {/* Lembretes */}
+                                                    <div className="p-6 bg-black/30 border border-white/5 rounded-2xl">
+                                                        <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                                                            <Icon name="alarm" className="w-4 h-4 text-brandAccent" />
+                                                            Lembretes
+                                                        </h3>
+                                                        <div className="flex flex-col gap-2">
+                                                            <button onClick={downloadCalendarReminder} className="w-full py-2.5 px-4 rounded-xl bg-white/5 border border-white/10 text-slate-300 text-xs font-bold hover:bg-white/10 transition-all flex items-center justify-center gap-2">
+                                                                <svg fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>
+                                                                Adicionar ao Calendário (.ics)
+                                                            </button>
+                                                            <button onClick={requestNotificationReminder} className="w-full py-2.5 px-4 rounded-xl bg-white/5 border border-white/10 text-slate-300 text-xs font-bold hover:bg-white/10 transition-all flex items-center justify-center gap-2">
+                                                                <svg fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
+                                                                Ativar Notificação Push
+                                                            </button>
+                                                        </div>
                                                     </div>
 
-                                                    <p className="text-xs text-slate-400 font-mono text-center mb-6 max-w-xs break-all select-all">
-                                                        00020126440014br.gov.bcb.pix0122rodrigodevpro@gmail.com5204000053039865802BR5915RODRIGO ALMEIDA6006PALMAS62070503***6304EE88
-                                                    </p>
-
-                                                    <button onClick={() => copyText('00020126440014br.gov.bcb.pix0122rodrigodevpro@gmail.com5204000053039865802BR5915RODRIGO ALMEIDA6006PALMAS62070503***6304EE88', 'Código PIX Copiado!')} className="w-full max-w-xs py-4 rounded-xl bg-gradient-to-r from-brandEmerald to-teal-500 text-white font-bold tracking-wider shadow-neon-glow hover:brightness-110 uppercase text-xs transition-all flex items-center justify-center gap-2">
-                                                        <Icon name="copy" className="w-5 h-5" />
-                                                        Copiar Código Copia e Cola
-                                                    </button>
+                                                    {/* Histórico */}
+                                                    <div className="p-6 bg-black/30 border border-white/5 rounded-2xl flex-1">
+                                                        <h3 className="text-sm font-bold text-white mb-3">Histórico</h3>
+                                                        {paymentHistory.length === 0 ? (
+                                                            <p className="text-xs text-slate-500">Nenhum pagamento registrado ainda.</p>
+                                                        ) : (
+                                                            <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
+                                                                {[...paymentHistory].reverse().map((entry, i) => (
+                                                                    <div key={i} className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="w-2 h-2 rounded-full bg-brandEmerald" />
+                                                                            <span className="text-xs text-slate-300">{new Date(entry.date).toLocaleDateString('pt-BR')}</span>
+                                                                        </div>
+                                                                        <span className="text-xs font-bold text-brandEmerald">R$ {entry.amount.toFixed(2)}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            ) : (
-                                                <div className="mt-6 p-8 bg-brandCard border border-brandBorder rounded-2xl text-center">
-                                                    <p className="text-slate-400">Seu plano financeiro ainda não foi configurado pelo administrador.</p>
-                                                </div>
-                                            )}
+                                            </div>
                                         </div>
                                     </main>
                                 )}
@@ -2759,6 +3078,20 @@
                                                     >
                                                         <Icon name="play" className="w-4 h-4 fill-current" />
                                                         <span>TRAILER + ASSISTIR</span>
+                                                    </button>
+
+                                                    <button onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (!continueWatching.find(c => c.id === selectedMovie.id)) {
+                                                            const newCW = [...continueWatching, { id: selectedMovie.id, title: selectedMovie.title, poster_path: selectedMovie.poster_path, backdrop_path: selectedMovie.backdrop_path, addedAt: new Date().toISOString(), progress: 0 }];
+                                                            setContinueWatching(newCW);
+                                                            if (currentUser) localStorage.setItem('ap_continue_watching_' + currentUser.id, JSON.stringify(newCW));
+                                                            showToast('Adicionado a "Continuar Assistindo"', 'success');
+                                                        } else {
+                                                            showToast('Já está na sua lista', 'info');
+                                                        }
+                                                    }} className="py-2.5 px-4 rounded-xl bg-brandAccent/10 border border-brandAccent/20 text-brandAccent text-[10px] font-bold hover:bg-brandAccent/20 transition-all flex items-center justify-center gap-1.5">
+                                                        <Icon name="play" className="w-3.5 h-3.5" /> Continuar
                                                     </button>
 
                                                     {/* Credentials Copy Button */}
