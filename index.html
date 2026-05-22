@@ -714,61 +714,6 @@
             { id: 'pedro-almeida', name: 'Pedro - Almeida+', price: 8.00, link: 'https://www.mercadopago.com.br/subscriptions/checkout?preapproval_plan_id=cb5c1bb1f1a5464282be48fb2f9eb069' }
         ];
 
-        // --- YOUTUBE PREMIUM PAGE ---
-        const YouTubePage = ({ onBack }) => {
-            return (
-                <div className="flex-1 flex flex-col min-h-0 route-fade">
-                    <div className="flex items-center gap-3 px-4 md:px-6 py-4 border-b border-white/5">
-                        <button onClick={onBack}
-                            className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4 text-slate-400">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                            </svg>
-                        </button>
-                        <div className="flex items-center gap-2.5">
-                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                                style={{ background: 'linear-gradient(135deg, #FF0000, #CC0000)' }}>
-                                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
-                                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <h1 className="text-white font-black text-base leading-tight">YouTube Premium</h1>
-                                <p className="text-[10px] text-slate-500 font-medium">YouTube Music · Sem anúncios · Google Family</p>
-                            </div>
-                        </div>
-                        <span className="ml-auto text-[9px] font-black px-2 py-1 rounded-lg tracking-wider"
-                            style={{ background: 'rgba(255,0,0,0.15)', color: '#FF4444', border: '1px solid rgba(255,0,0,0.25)' }}>
-                            PREMIUM
-                        </span>
-                    </div>
-
-                    <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6">
-                        <div className="w-24 h-24 rounded-3xl flex items-center justify-center"
-                            style={{ background: 'linear-gradient(135deg, #FF0000, #CC0000)', boxShadow: '0 12px 40px rgba(255,0,0,0.35)' }}>
-                            <svg viewBox="0 0 24 24" className="w-14 h-14 fill-white">
-                                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                            </svg>
-                        </div>
-                        <h2 className="text-2xl font-black text-white text-center">YouTube Premium</h2>
-                        <p className="text-sm text-slate-400 text-center max-w-xs">Música, filmes, lives e muito mais. Sem anúncios.</p>
-                        <a href="https://youtube.com" target="_blank" rel="noopener noreferrer"
-                            className="w-full max-w-xs py-4 rounded-xl font-bold text-sm text-white tracking-wider shadow-lg hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 uppercase"
-                            style={{ background: '#FF0000', boxShadow: '0 4px 24px rgba(255,0,0,0.4)' }}>
-                            <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white"><path d="M8 5v14l11-7z"/></svg>
-                            IR PARA O YOUTUBE
-                        </a>
-                        <div className="flex flex-col items-center gap-2 mt-2">
-                            <a href="https://music.youtube.com" target="_blank" rel="noopener noreferrer"
-                                className="text-xs text-slate-500 hover:text-red-400 transition-colors">YouTube Music</a>
-                            <a href="https://www.youtube.com/premium" target="_blank" rel="noopener noreferrer"
-                                className="text-xs text-slate-500 hover:text-red-400 transition-colors">Saiba mais sobre o Premium</a>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
         function App() {
             // --- GLOBAL STATE FROM SUPABASE ---
             const [users, setUsers] = useState(() => {
@@ -846,13 +791,6 @@
             const [dontRemindCreds, setDontRemindCreds] = useState(() => {
                 return localStorage.getItem('ap_dont_remind_creds') === 'true';
             });
-            // Admin: per-user payment amount state
-            const [userPaymentAmounts, setUserPaymentAmounts] = useState(() => {
-                try {
-                    const saved = localStorage.getItem('ap_user_payment_amounts');
-                    return saved ? JSON.parse(saved) : {};
-                } catch (e) { return {}; }
-            });
             // Video player simulation state
             const [isPlaying, setIsPlaying] = useState(false);
             const [playbackProgress, setPlaybackProgress] = useState(32.75);
@@ -860,24 +798,6 @@
 
             // Toast/Alert system
             const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
-
-            // Payment states
-            const [paymentDueDate, setPaymentDueDate] = useState(() => {
-                const saved = localStorage.getItem('ap_payment_' + (currentUser?.id || ''));
-                return saved ? JSON.parse(saved) : null;
-            });
-            const [paymentStatus, setPaymentStatus] = useState(() => {
-                const saved = localStorage.getItem('ap_payment_status_' + (currentUser?.id || ''));
-                return saved ? JSON.parse(saved) : 'pending';
-            });
-            const [paymentAmount, setPaymentAmount] = useState(() => {
-                const saved = localStorage.getItem('ap_payment_amount_' + (currentUser?.id || ''));
-                return saved ? JSON.parse(saved) : 25.00;
-            });
-            const [paymentHistory, setPaymentHistory] = useState(() => {
-                const saved = localStorage.getItem('ap_payment_history_' + (currentUser?.id || ''));
-                return saved ? JSON.parse(saved) : [];
-            });
 
             // Login credentials form
             const [loginEmail, setLoginEmail] = useState('');
@@ -1235,20 +1155,6 @@
                 }
             }, [continueWatching, currentUser]);
 
-            // --- USER PAYMENT AMOUNTS PERSISTENCE ---
-            useEffect(() => {
-                localStorage.setItem('ap_user_payment_amounts', JSON.stringify(userPaymentAmounts));
-            }, [userPaymentAmounts]);
-
-            // --- SYNC PAYMENT AMOUNT FROM ADMIN SETTINGS ON ROUTE CHANGE ---
-            useEffect(() => {
-                if (!currentUser) return;
-                const saved = localStorage.getItem('ap_payment_amount_' + currentUser.id);
-                if (saved !== null) {
-                    setPaymentAmount(JSON.parse(saved));
-                }
-            }, [currentRoute, currentUser]);
-
             // --- TRIGGER TOAST ---
             const showToast = (message, type = 'success') => {
                 setToast({ visible: true, message, type });
@@ -1347,6 +1253,15 @@
                 if (name.includes('paramount')) return `https://www.paramountplus.com/search/?q=${query}`;
                 if (name.includes('apple')) return `https://tv.apple.com/search?term=${query}`;
                 return provider.url;
+            };
+
+            const getTmdbWatchUrl = async (movieId) => {
+                try {
+                    const data = await tmdbFetch(`movie/${movieId}/watch/providers`);
+                    return data.results?.BR?.link || null;
+                } catch (e) {
+                    return null;
+                }
             };
 
             // --- ADMIN ACTIONS ---
@@ -1561,23 +1476,7 @@
                 }
                 return crc.toString(16).toUpperCase().padStart(4, '0');
             };
-            const generatePixPayload = (pixKey, name, city, amount) => {
-                const gui = '0014br.gov.bcb.pix';
-                const key = '01' + String(pixKey.length).padStart(2, '0') + pixKey;
-                const merchantAccInfo = '26' + String(gui.length + key.length).padStart(2, '0') + gui + key;
-                const mcc = '52040000';
-                const currency = '5303986';
-                const amountField = amount ? '54' + String(amount.toFixed(2).length).padStart(2, '0') + amount.toFixed(2) : '';
-                const country = '5802BR';
-                const merchantName = '59' + String(name.length).padStart(2, '0') + name;
-                const merchantCity = '60' + String(city.length).padStart(2, '0') + city;
-                const txId = '62070503***';
-                let payload = '000201' + merchantAccInfo + mcc + currency + amountField + country + merchantName + merchantCity + txId + '6304';
-                return payload + crc16(payload);
-            };
-            const PIX_KEY = 'allmeida.corp@gmail.com';
-            const pixPayload = React.useMemo(() => generatePixPayload(PIX_KEY, 'ALMEIDA PLUS', 'BRASIL', paymentAmount), [paymentAmount]);
-
+            
             const handleLogout = () => {
                 setCurrentUser(null);
                 setCurrentRoute('login');
@@ -1586,63 +1485,39 @@
                 showToast('Sessão encerrada.', 'info');
             };
 
-            const openGoogleCalendar = () => {
-                const due = paymentDueDate ? new Date(paymentDueDate) : new Date(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate());
-                const dateStr = due.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-                const url = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent('Pagamento ALMEIDA+ - R$ ' + paymentAmount.toFixed(2)) + '&dates=' + dateStr + '/' + dateStr + '&details=' + encodeURIComponent('Lembrete de pagamento da sua assinatura ALMEIDA+. Vencimento: ' + due.toLocaleDateString('pt-BR')) + '&trp=true&sf=true';
-                window.open(url, '_blank');
-                showToast('Google Calendar aberto! Clique em "Salvar" para ativar o lembrete.', 'success');
-            };
-
-            const requestNotificationReminder = () => {
-                if (!('Notification' in window)) {
-                    showToast('Notificações não suportadas neste navegador.', 'error');
-                    return;
-                }
-                if (Notification.permission === 'granted') {
-                    new Notification('ALMEIDA+ Lembrete', {
-                        body: 'Seu pagamento de R$ ' + paymentAmount.toFixed(2) + ' vence em breve!',
-                        icon: './favicon.png'
-                    });
-                } else if (Notification.permission !== 'denied') {
-                    Notification.requestPermission().then(permission => {
-                        if (permission === 'granted') {
-                            new Notification('ALMEIDA+ Lembrete', {
-                                body: 'Notificações ativadas! Você receberá lembretes de pagamento.',
-                                icon: './favicon.png'
-                            });
-                        }
-                    });
-                }
-            };
-
             // --- TRAILER HANDLER ---
             const handleOpenTrailer = async (movie, closeModal = false) => {
                 const provider = getMovieProvider(movie);
                 if (closeModal) setSelectedMovie(null);
-                try {
-                    const findTrailer = (results) =>
-                        results?.find(v => v.type === 'Trailer' && v.site === 'YouTube') ||
-                        results?.find(v => (v.type === 'Teaser' || v.type === 'Trailer') && v.site === 'YouTube');
-                    const data = await tmdbFetch(`movie/${movie.id}/videos`, { language: 'pt-BR' });
-                    let trailer = findTrailer(data.results);
-                    if (!trailer) {
-                        const data2 = await tmdbFetch(`movie/${movie.id}/videos`, { language: 'en-US' });
-                        trailer = findTrailer(data2.results);
-                    }
-                    if (!trailer) {
-                        const data3 = await tmdbFetch(`movie/${movie.id}/videos`, {});
-                        trailer = data3.results?.find(v => v.site === 'YouTube' && v.key);
-                    }
-                    if (trailer?.key) {
-                        setTrailerModal({ movie, youtubeKey: trailer.key, providerUrl: getMovieWatchUrl(movie, provider) || provider?.url || null, providerName: provider?.name || 'Streaming' });
-                    } else if (provider?.url) {
-                        window.open(getMovieWatchUrl(movie, provider) || provider.url, '_blank');
-                    } else {
-                        showToast('Nenhum trailer encontrado para este título.', 'error');
-                    }
-                } catch (err) {
-                    if (provider?.url) window.open(getMovieWatchUrl(movie, provider) || provider.url, '_blank');
+                const [tmdbUrl, trailerVideo] = await Promise.all([
+                    getTmdbWatchUrl(movie.id),
+                    (async () => {
+                        try {
+                            const findTrailer = (results) =>
+                                results?.find(v => v.type === 'Trailer' && v.site === 'YouTube') ||
+                                results?.find(v => (v.type === 'Teaser' || v.type === 'Trailer') && v.site === 'YouTube');
+                            const data = await tmdbFetch(`movie/${movie.id}/videos`, { language: 'pt-BR' });
+                            let t = findTrailer(data.results);
+                            if (!t) {
+                                const data2 = await tmdbFetch(`movie/${movie.id}/videos`, { language: 'en-US' });
+                                t = findTrailer(data2.results);
+                            }
+                            if (!t) {
+                                const data3 = await tmdbFetch(`movie/${movie.id}/videos`, {});
+                                t = data3.results?.find(v => v.site === 'YouTube' && v.key);
+                            }
+                            return t;
+                        } catch { return null; }
+                    })()
+                ]);
+                const providerUrl = tmdbUrl || getMovieWatchUrl(movie, provider) || provider?.url || null;
+                if (trailerVideo?.key) {
+                    setTrailerModal({ movie, youtubeKey: trailerVideo.key, providerUrl, providerName: provider?.name || 'Streaming' });
+                } else if (providerUrl) {
+                    const p = provider || (await getMovieProvider(movie));
+                    handleWatchOnPlatform(p, providerUrl, movie);
+                } else {
+                    showToast('Nenhum trailer ou link encontrado para este título.', 'error');
                 }
             };
 
@@ -2593,13 +2468,6 @@
 
 
                                 {/* ======================================================== */}
-                                {/*              YOUTUBE PREMIUM / MUSIC PAGE                */}
-                                {/* ======================================================== */}
-                                {currentRoute === 'youtube' && (
-                                    <YouTubePage onBack={() => setCurrentRoute('acessos')} />
-                                )}
-
-                                {/* ======================================================== */}
                                 {/*             4. ADMINISTRATOR CONTROL PANEL               */}
                                 {/* ======================================================== */}
                                 {currentRoute === 'admin' && currentUser.role === 'admin' && (
@@ -2733,22 +2601,6 @@
                                                                 <div className="pt-3 border-t border-white/5 flex justify-between items-center gap-3">
                                                                     <span className="text-[10px] text-slate-400 font-medium">Senha temporaria:</span>
                                                                     <span className="text-xs font-black text-white font-mono truncate">{u.password}</span>
-                                                                </div>
-
-                                                                {/* Monthly Value Input (Admin) */}
-                                                                <div className="pt-2 border-t border-white/5 flex items-center gap-2">
-                                                                    <span className="text-[9px] text-slate-400 uppercase tracking-widest font-bold shrink-0">Valor</span>
-                                                                    <div className="flex items-center gap-1 flex-1">
-                                                                        <span className="text-[10px] text-slate-500 font-bold">R$</span>
-                                                                        <input type="number" step="0.01" min="0" value={userPaymentAmounts[u.id] ?? 25.00} onChange={(e) => setUserPaymentAmounts(prev => ({ ...prev, [u.id]: parseFloat(e.target.value) || 0 }))} className="w-full px-2 py-1 rounded-lg bg-black/40 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-brandAccent" />
-                                                                    </div>
-                                                                    <button onClick={() => {
-                                                                        const val = userPaymentAmounts[u.id] ?? 25.00;
-                                                                        localStorage.setItem('ap_payment_amount_' + u.id, JSON.stringify(val));
-                                                                        showToast('Valor de R$ ' + val.toFixed(2) + ' salvo para ' + u.name, 'success');
-                                                                    }} className="px-2.5 py-1 rounded-lg bg-brandAccent/10 border border-brandAccent/20 text-brandAccent text-[9px] font-bold hover:bg-brandAccent/20 transition whitespace-nowrap">
-                                                                        Salvar
-                                                                    </button>
                                                                 </div>
                                                             </div>
                                                         );

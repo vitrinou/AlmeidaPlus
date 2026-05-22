@@ -172,6 +172,10 @@ class SupabaseClient {
     this.cache.delete(`settings_${userId}`);
   }
 
+  async request(method, table, data = null) {
+    return this._fetch(method, table, data);
+  }
+
   clearCache() {
     this.cache.clear();
   }
