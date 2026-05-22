@@ -25,6 +25,9 @@
     <!-- Supabase Client -->
     <script src="./supabase-client.js"></script>
 
+    <!-- HLS.js for Live TV -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -678,6 +681,62 @@
             );
         };
 
+        // --- FALLBACK LIVE TV CHANNELS ---
+        const CANAIS_FIXOS = [
+            {
+                name: 'TV Brasil',
+                group: 'Público',
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/TV_Brasil_logo.svg/200px-TV_Brasil_logo.svg.png',
+                url: 'https://tvbrasil.ebc.com.br/ao-vivo',
+                stream: 'https://d2856rpu8ob5e8.cloudfront.net/out/v1/c258487aef564b34afe42c87b4e41054/index.m3u8'
+            },
+            {
+                name: 'Câmara dos Deputados',
+                group: 'Legislativo',
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Logotipo_TV_C%C3%A2mara.png/200px-Logotipo_TV_C%C3%A2mara.png',
+                url: 'https://www.camara.leg.br/tv/',
+                stream: 'https://cdntv.camara.leg.br/live/smil:camara.smil/playlist.m3u8'
+            },
+            {
+                name: 'Senado Federal',
+                group: 'Legislativo',
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/TV_Senado_logo.png/200px-TV_Senado_logo.png',
+                url: 'https://www12.senado.leg.br/tv',
+                stream: 'https://stream.senado.gov.br:1936/senado/senado/playlist.m3u8'
+            },
+            {
+                name: 'NASA TV',
+                group: 'Internacional',
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/200px-NASA_logo.svg.png',
+                url: 'https://www.nasa.gov/nasatv',
+                stream: 'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8'
+            }
+        ];
+
+        const parseM3U = (text) => {
+            const lines = text.split('\n');
+            const channels = [];
+            let current = {};
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line.startsWith('#EXTINF:')) {
+                    const nameMatch = line.match(/,(.+)$/);
+                    const logoMatch = line.match(/tvg-logo="([^"]+)"/);
+                    const groupMatch = line.match(/group-title="([^"]+)"/);
+                    current = {
+                        name: nameMatch ? nameMatch[1].trim() : 'Canal',
+                        logo: logoMatch ? logoMatch[1] : '',
+                        group: groupMatch ? groupMatch[1] : 'Geral',
+                    };
+                } else if (line && !line.startsWith('#') && current.name) {
+                    current.stream = line;
+                    channels.push({ ...current, id: current.name });
+                    current = {};
+                }
+            }
+            return channels;
+        };
+
         function App() {
             // --- GLOBAL STATE FROM SUPABASE ---
             const [users, setUsers] = useState(() => {
@@ -717,7 +776,7 @@
             const [catalogSort, setCatalogSort] = useState('none'); // 'none' | 'rating' | 'year'
 
             // --- CREDENTIALS COPY TOAST STATE ---
-            const [activeCredentialsToast, setActiveCredentialsToast] = useState(null);
+            // Replaced by showCredsModal with 'nao lembrar' option
 
             // --- ADMIN TABS STATE ---
             const [adminTab, setAdminTab] = useState('dashboard'); // 'dashboard' | 'members' | 'providers'
@@ -756,6 +815,19 @@
 
             // Trailer modal state
             const [trailerModal, setTrailerModal] = useState(null);
+            // TV ao Vivo states
+            const [tvChannels, setTvChannels] = useState([]);
+            const [tvChannelActive, setTvChannelActive] = useState(null);
+            const [tvGroup, setTvGroup] = useState('Todos');
+            const [tvSearch, setTvSearch] = useState('');
+            const [tvLoading, setTvLoading] = useState(false);
+            const [tvPlayerError, setTvPlayerError] = useState(false);
+            const [tvIsPlaying, setTvIsPlaying] = useState(false);
+            // Credentials modal state (for "assistir na plataforma" flow)
+            const [showCredsModal, setShowCredsModal] = useState(null);
+            const [dontRemindCreds, setDontRemindCreds] = useState(() => {
+                return localStorage.getItem('ap_dont_remind_creds') === 'true';
+            });
             // Video player simulation state
             const [isPlaying, setIsPlaying] = useState(false);
             const [playbackProgress, setPlaybackProgress] = useState(32.75);
@@ -1101,6 +1173,62 @@
                 return () => { cancelled = true; };
             }, [currentRoute]);
 
+            // --- TV AO VIVO: CARREGAR CANAIS ---
+            useEffect(() => {
+                if (currentRoute !== 'tv') return;
+                setTvLoading(true);
+                const PROXY = 'https://api.allorigins.win/raw?url=';
+                const M3U_URL = 'https://raw.githubusercontent.com/joaoguidugli/FTA-IPTV-Brasil/master/playlist.m3u8';
+                fetch(`${PROXY}${encodeURIComponent(M3U_URL)}`)
+                    .then(r => r.text())
+                    .then(text => {
+                        const parsed = parseM3U(text);
+                        const allChannels = [...CANAIS_FIXOS, ...parsed].filter(c => c.stream);
+                        setTvChannels(allChannels);
+                        setTvChannelActive(allChannels[0] || null);
+                    })
+                    .catch(() => {
+                        setTvChannels(CANAIS_FIXOS);
+                        setTvChannelActive(CANAIS_FIXOS[0] || null);
+                    })
+                    .finally(() => setTvLoading(false));
+            }, [currentRoute]);
+
+            // --- TV AO VIVO: PLAYER HLS ---
+            useEffect(() => {
+                if (!tvChannelActive || currentRoute !== 'tv') return;
+                setTvPlayerError(false);
+                setTvIsPlaying(false);
+                const timer = setTimeout(() => {
+                    const video = document.getElementById('tv-player');
+                    if (!video) return;
+                    if (window._hlsInstance) {
+                        window._hlsInstance.destroy();
+                        window._hlsInstance = null;
+                    }
+                    if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+                        const hls = new Hls({ enableWorker: true, lowLatencyMode: true, maxBufferLength: 30, maxMaxBufferLength: 60 });
+                        hls.loadSource(tvChannelActive.stream);
+                        hls.attachMedia(video);
+                        hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(() => {}); });
+                        hls.on(Hls.Events.ERROR, (event, data) => { if (data.fatal) setTvPlayerError(true); });
+                        window._hlsInstance = hls;
+                    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                        video.src = tvChannelActive.stream;
+                        video.play().catch(() => {});
+                    } else {
+                        setTvPlayerError(true);
+                    }
+                }, 100);
+                return () => {
+                    clearTimeout(timer);
+                    if (window._hlsInstance) {
+                        window._hlsInstance.destroy();
+                        window._hlsInstance = null;
+                    }
+                };
+            }, [tvChannelActive, currentRoute]);
+
             // --- TRIGGER TOAST ---
             const showToast = (message, type = 'success') => {
                 setToast({ visible: true, message, type });
@@ -1414,15 +1542,6 @@
             // --- TRAILER HANDLER ---
             const handleOpenTrailer = async (movie, closeModal = false) => {
                 const provider = getMovieProvider(movie);
-                if (provider && provider.email && provider.password) {
-                    copyText(provider.password, 'Senha copiada!');
-                    setActiveCredentialsToast({
-                        email: provider.email,
-                        password: provider.password,
-                        platform: provider.name
-                    });
-                    setTimeout(() => setActiveCredentialsToast(null), 9000);
-                }
                 if (closeModal) setSelectedMovie(null);
                 try {
                     const data = await tmdbFetch(`movie/${movie.id}/videos`, { language: 'pt-BR' });
@@ -1434,13 +1553,20 @@
                     if (trailer?.key) {
                         setTrailerModal({ movie, youtubeKey: trailer.key, providerUrl: provider?.url || null, providerName: provider?.name || 'Streaming' });
                     } else {
-                        showToast('Trailer não disponível. Abrindo plataforma...', 'info');
                         if (provider?.url) window.open(provider.url, '_blank');
                     }
                 } catch (err) {
-                    showToast('Sem trailer disponível. Abrindo plataforma...', 'info');
                     if (provider?.url) window.open(provider.url, '_blank');
                 }
+            };
+
+            // --- HANDLE "ASSISTIR NA PLATAFORMA" (mostra credenciais) ---
+            const handleWatchOnPlatform = (provider, returnUrl) => {
+                if (dontRemindCreds || !provider || !provider.email || !provider.password) {
+                    if (provider?.url) window.open(provider.url, '_blank');
+                    return;
+                }
+                setShowCredsModal({ provider, returnUrl });
             };
 
             // Finance widgets removed for compliance and simplicity
@@ -1479,43 +1605,7 @@
                         </div>
                     )}
 
-                    {/* Credentials Copy Toast */}
-                    {activeCredentialsToast && (
-                        <div className="fixed top-24 right-4 sm:right-8 z-[999] w-[calc(100vw-2rem)] max-w-sm p-4 rounded-xl shadow-2xl glass-panel border border-brandAccent/15 bg-brandAccent/4 backdrop-blur-xl animate-float">
-                            <div className="flex items-center gap-2 mb-3">
-                                <Icon name="key" className="w-4 h-4 text-brandAccent" />
-                                <h4 className="font-bold text-sm text-brandAccent uppercase tracking-wider">{activeCredentialsToast.platform}</h4>
-                            </div>
-                            <div className="space-y-2.5 bg-black/40 rounded-lg p-3 mb-3 border border-white/5">
-                                <div>
-                                    <p className="text-[10px] text-slate-500 font-semibold mb-1">Email</p>
-                                    <p className="text-xs text-white font-mono break-all">{activeCredentialsToast.email}</p>
-                                </div>
-                                <div className="h-[1px] bg-white/10" />
-                                <div>
-                                    <p className="text-[10px] text-slate-500 font-semibold mb-1">Senha</p>
-                                    <p className="text-xs text-white font-mono">{activeCredentialsToast.password}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => copyText(activeCredentialsToast.password, 'Senha copiada novamente.')}
-                                    className="flex-1 py-2 rounded-lg bg-brandAccent/20 text-brandAccent border border-brandAccent/25 text-[10px] font-extrabold uppercase tracking-wider hover:bg-brandAccent/30 transition"
-                                >
-                                    Copiar Senha
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveCredentialsToast(null)}
-                                    className="px-3 py-2 rounded-lg bg-white/5 text-slate-300 border border-white/10 text-[10px] font-bold hover:bg-white/10 transition"
-                                >
-                                    Fechar
-                                </button>
-                            </div>
-                            <p className="text-[10px] text-slate-400 text-center mt-3">Se o streaming pedir login, use o email acima e cole a senha.</p>
-                        </div>
-                    )}
+
 
                     {/* ======================================================== */}
                     {/*             1. CINEMATIC LOGIN EXPERIENCE                */}
@@ -2053,6 +2143,23 @@
                                         </button>
 
                                         <button
+                                            onClick={() => setCurrentRoute('tv')}
+                                            className={`w-full px-4 py-3 rounded-xl flex ${sidebarCollapsed ? 'justify-center' : ''} items-center gap-3 text-sm font-semibold transition-all duration-200 ${currentRoute === 'tv' ? 'bg-brandRose/10 text-brandRose border border-brandRose/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                                            style={currentRoute === 'tv' ? { borderLeft: '3px solid #F43F5E', borderTopColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: 'transparent' } : {}}
+                                            title={sidebarCollapsed ? 'TV ao Vivo' : ''}
+                                        >
+                                            <svg fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5 shrink-0">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 20.25h12m-7.5-3v3m3-3v3m-10.125-3h17.25c.621 0 1.125-.504 1.125-1.125V4.875c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125z" />
+                                            </svg>
+                                            {!sidebarCollapsed && <span>TV ao Vivo</span>}
+                                            {!sidebarCollapsed && (
+                                                <span className="ml-auto text-[8px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-brandRose/15 text-brandRose border border-brandRose/20">
+                                                    NOVO
+                                                </span>
+                                            )}
+                                        </button>
+
+                                        <button
                                             onClick={() => {
                                                 setCurrentRoute('financeiro');
                                             }}
@@ -2364,6 +2471,123 @@
                                                         </div>
                                                     ))
                                                 )}
+                                            </div>
+                                        </div>
+                                    </main>
+                                )}
+
+                                {/* ======================================================== */}
+                                {/*                     TV AO VIVO                          */}
+                                {/* ======================================================== */}
+                                {currentRoute === 'tv' && (
+                                    <main className="flex-1 flex flex-col min-w-0 route-fade overflow-hidden" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+                                        {/* Header da TV */}
+                                        <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-white/5 shrink-0">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="w-2 h-2 rounded-full bg-brandRose animate-pulse" />
+                                                    <span className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-brandRose">Ao Vivo</span>
+                                                </div>
+                                                <h2 className="text-lg font-black text-white tracking-tight">TV ao Vivo</h2>
+                                                <span className="text-[10px] text-slate-500 font-mono">{tvChannels.length} canais</span>
+                                            </div>
+                                            <div className="relative hidden md:block">
+                                                <input type="text" value={tvSearch} onChange={e => setTvSearch(e.target.value)} placeholder="Buscar canal..." className="pl-9 pr-4 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brandAccent transition-all w-52" />
+                                                <Icon name="search" className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-col lg:flex-row flex-1 overflow-hidden gap-0">
+                                            {/* Player */}
+                                            <div className="lg:flex-1 flex flex-col bg-black/60 border-r border-white/5">
+                                                <div className="relative w-full bg-black" style={{ aspectRatio: '16/9' }}>
+                                                    {tvLoading && (
+                                                        <div className="absolute inset-0 flex items-center justify-center gap-3 flex-col">
+                                                            <div className="w-8 h-8 rounded-full border-2 border-brandAccent border-t-transparent animate-spin" />
+                                                            <span className="text-xs text-slate-400">Carregando canais...</span>
+                                                        </div>
+                                                    )}
+                                                    {tvPlayerError && (
+                                                        <div className="absolute inset-0 flex items-center justify-center flex-col gap-3 text-center p-6">
+                                                            <div className="w-12 h-12 rounded-2xl bg-brandRose/10 border border-brandRose/20 flex items-center justify-center">
+                                                                <Icon name="x" className="w-6 h-6 text-brandRose" />
+                                                            </div>
+                                                            <p className="text-sm font-bold text-white">Stream indisponível</p>
+                                                            <p className="text-xs text-slate-400">Este canal está fora do ar no momento.</p>
+                                                            <button onClick={() => { setTvPlayerError(false); const idx = tvChannels.indexOf(tvChannelActive); const next = tvChannels[idx + 1] || tvChannels[0]; setTvChannelActive(next); }} className="px-4 py-2 rounded-xl bg-brandAccent text-white text-xs font-bold hover:brightness-110 transition">Próximo Canal</button>
+                                                        </div>
+                                                    )}
+                                                    <video id="tv-player" className="w-full h-full object-contain" controls autoPlay playsInline onError={() => setTvPlayerError(true)} onPlay={() => { setTvIsPlaying(true); setTvPlayerError(false); }} onPause={() => setTvIsPlaying(false)} style={{ display: tvLoading || tvPlayerError ? 'none' : 'block' }} />
+                                                    {tvIsPlaying && (
+                                                        <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-sm border border-brandRose/30">
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-brandRose animate-pulse" />
+                                                            <span className="text-[9px] font-extrabold text-brandRose uppercase tracking-widest">Ao Vivo</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {tvChannelActive && (
+                                                    <div className="p-4 flex items-center justify-between gap-4 border-t border-white/5">
+                                                        <div className="flex items-center gap-3 min-w-0">
+                                                            {tvChannelActive.logo ? (
+                                                                <img src={tvChannelActive.logo} alt={tvChannelActive.name} className="w-10 h-10 rounded-xl object-contain bg-white/5 border border-white/10 p-1" onError={e => e.target.style.display='none'} />
+                                                            ) : (
+                                                                <div className="w-10 h-10 rounded-xl bg-brandAccent/10 border border-brandAccent/20 flex items-center justify-center">
+                                                                    <Icon name="play" className="w-5 h-5 text-brandAccent" />
+                                                                </div>
+                                                            )}
+                                                            <div className="min-w-0">
+                                                                <p className="font-extrabold text-white text-sm truncate">{tvChannelActive.name}</p>
+                                                                <p className="text-[10px] text-slate-500 uppercase tracking-wider">{tvChannelActive.group}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 shrink-0">
+                                                            <button onClick={() => { const video = document.getElementById('tv-player'); if (video) video.muted = !video.muted; }} className="p-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white transition text-xs font-bold" title="Mudo">🔊</button>
+                                                            <button onClick={() => { const video = document.getElementById('tv-player'); if (video && video.requestFullscreen) video.requestFullscreen(); }} className="p-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white transition text-xs font-bold" title="Tela cheia">⛶</button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Lista de canais */}
+                                            <div className="w-full lg:w-80 xl:w-96 shrink-0 flex flex-col border-t lg:border-t-0 border-white/5 overflow-hidden">
+                                                <div className="px-3 py-3 border-b border-white/5 overflow-x-auto custom-scrollbar shrink-0">
+                                                    <div className="flex gap-2 min-w-max">
+                                                        {['Todos', ...new Set(tvChannels.map(c => c.group))].map(group => (
+                                                            <button key={group} onClick={() => setTvGroup(group)} className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all whitespace-nowrap ${tvGroup === group ? 'bg-brandAccent/10 border-brandAccent/30 text-brandAccent' : 'bg-transparent border-white/10 text-slate-500 hover:text-white hover:border-white/20'}`}>{group}</button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <div className="md:hidden px-3 py-2 border-b border-white/5 shrink-0">
+                                                    <input type="text" value={tvSearch} onChange={e => setTvSearch(e.target.value)} placeholder="Buscar canal..." className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brandAccent" />
+                                                </div>
+                                                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                                                    {tvChannels.filter(c => { const m = tvGroup === 'Todos' || c.group === tvGroup; const s = !tvSearch || c.name.toLowerCase().includes(tvSearch.toLowerCase()); return m && s; }).map((canal, idx) => {
+                                                        const isActive = tvChannelActive?.stream === canal.stream;
+                                                        return (
+                                                            <button key={`${canal.stream}-${idx}`} onClick={() => { setTvPlayerError(false); setTvChannelActive(canal); }} className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all border-b border-white/[0.03] ${isActive ? 'bg-brandAccent/8 border-l-2 border-l-brandAccent' : 'hover:bg-white/[0.03] border-l-2 border-l-transparent'}`}>
+                                                                <div className="w-9 h-9 shrink-0 rounded-xl overflow-hidden bg-white/5 border border-white/10 flex items-center justify-center p-1">
+                                                                    {canal.logo ? <img src={canal.logo} alt={canal.name} className="w-full h-full object-contain" onError={e => e.target.style.display='none'} /> : <Icon name="play" className="w-4 h-4 text-slate-500" />}
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className={`text-xs font-bold truncate ${isActive ? 'text-white' : 'text-slate-300'}`}>{canal.name}</p>
+                                                                    <p className="text-[9px] text-slate-500 uppercase tracking-wider">{canal.group}</p>
+                                                                </div>
+                                                                {isActive && (
+                                                                    <span className="flex items-center gap-1 shrink-0">
+                                                                        <span className="w-1.5 h-1.5 rounded-full bg-brandRose animate-pulse" />
+                                                                        <span className="text-[8px] text-brandRose font-extrabold uppercase">Live</span>
+                                                                    </span>
+                                                                )}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                    {tvChannels.filter(c => { const m = tvGroup === 'Todos' || c.group === tvGroup; const s = !tvSearch || c.name.toLowerCase().includes(tvSearch.toLowerCase()); return m && s; }).length === 0 && (
+                                                        <div className="flex flex-col items-center py-12 gap-3 text-center px-4">
+                                                            <Icon name="search" className="w-8 h-8 text-slate-700" />
+                                                            <p className="text-sm text-slate-500">Nenhum canal encontrado</p>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </main>
@@ -3125,6 +3349,12 @@
                                     <Icon name="home" className="w-5 h-5" />
                                     <span className="text-[9px] font-bold">Início</span>
                                 </button>
+                                <button onClick={() => setCurrentRoute('tv')} className={`flex flex-col items-center gap-1 ${currentRoute === 'tv' ? 'text-brandRose' : 'text-slate-500'}`}>
+                                    <svg fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 20.25h12m-7.5-3v3m3-3v3m-10.125-3h17.25c.621 0 1.125-.504 1.125-1.125V4.875c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125z" />
+                                    </svg>
+                                    <span className="text-[9px] font-bold">TV</span>
+                                </button>
                                 <button onClick={() => setCurrentRoute('acessos')} className={`flex flex-col items-center gap-1 ${currentRoute === 'acessos' ? 'text-brandAccent' : 'text-slate-500'}`}>
                                     <Icon name="key" className="w-5 h-5" />
                                     <span className="text-[9px] font-bold">Acessos</span>
@@ -3167,11 +3397,84 @@
                                     <div className="flex items-center gap-3">
                                         <button onClick={() => setTrailerModal(null)} style={{ padding: '10px 18px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#ccc', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>Fechar</button>
                                         {trailerModal.providerUrl && (
-                                            <a href={trailerModal.providerUrl} target="_blank" rel="noreferrer" onClick={() => setTrailerModal(null)} style={{ padding: '10px 22px', borderRadius: '8px', background: '#E54711', color: '#fff', fontSize: '12px', fontWeight: 800, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '7px', boxShadow: '0 4px 16px rgba(229,71,17,0.35)' }}>
+                                            <button onClick={() => { const p = getMovieProvider(trailerModal.movie); handleWatchOnPlatform(p, trailerModal.providerUrl); }} style={{ padding: '10px 22px', borderRadius: '8px', background: '#E54711', color: '#fff', fontSize: '12px', fontWeight: 800, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '7px', boxShadow: '0 4px 16px rgba(229,71,17,0.35)' }}>
                                                 <Icon name="play" className="w-4 h-4" style={{ fill: 'currentColor' }} />ASSISTIR EM {trailerModal.providerName.toUpperCase()}
-                                            </a>
+                                            </button>
                                         )}
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* === CREDENTIALS MODAL (mostra ao clicar "ASSISTIR") === */}
+                    {showCredsModal && (
+                        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4"
+                            style={{ background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(6px)' }}
+                            onClick={(e) => { if (e.target === e.currentTarget) setShowCredsModal(null); }}
+                        >
+                            <div className="w-full max-w-sm flex flex-col gap-0" style={{ background: '#0a0a0d', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-brandAccent/15 flex items-center justify-center">
+                                            <Icon name="key" className="w-4 h-4 text-brandAccent" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[11px] font-bold text-white">{showCredsModal.provider.name}</p>
+                                            <p className="text-[9px] text-slate-500 uppercase tracking-wider">Credenciais de Acesso</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setShowCredsModal(null)} style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '6px', color: '#fff', cursor: 'pointer', lineHeight: 0 }}>
+                                        <Icon name="x" className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <div className="p-5 space-y-4">
+                                    <div>
+                                        <label className="text-[10px] text-slate-500 uppercase tracking-wider font-bold block mb-1.5">E-mail</label>
+                                        <div className="flex items-center justify-between gap-2 bg-black/40 px-3 py-2.5 rounded-lg border border-white/10">
+                                            <span className="text-sm text-white font-mono truncate">{showCredsModal.provider.email}</span>
+                                            <button onClick={() => copyText(showCredsModal.provider.email, 'E-mail copiado!')} className="text-slate-400 hover:text-white transition-colors shrink-0">
+                                                <Icon name="copy" className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] text-slate-500 uppercase tracking-wider font-bold block mb-1.5">Senha</label>
+                                        <div className="flex items-center justify-between gap-2 bg-black/40 px-3 py-2.5 rounded-lg border border-white/10">
+                                            <span className="text-sm text-white font-mono">{showCredsModal.provider.password}</span>
+                                            <button onClick={() => copyText(showCredsModal.provider.password, 'Senha copiada!')} className="text-slate-400 hover:text-white transition-colors shrink-0">
+                                                <Icon name="copy" className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <label className="flex items-center gap-2 cursor-pointer py-1">
+                                        <input
+                                            type="checkbox"
+                                            checked={dontRemindCreds}
+                                            onChange={(e) => {
+                                                const val = e.target.checked;
+                                                setDontRemindCreds(val);
+                                                localStorage.setItem('ap_dont_remind_creds', val.toString());
+                                            }}
+                                            className="w-3.5 h-3.5 rounded border-white/20 bg-black/40 accent-brandAccent"
+                                        />
+                                        <span className="text-[10px] text-slate-400">Não perguntar novamente</span>
+                                    </label>
+                                </div>
+                                <div className="flex items-center gap-3 px-5 py-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                                    <button onClick={() => setShowCredsModal(null)} className="flex-1 py-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 text-xs font-bold hover:bg-white/10 transition">
+                                        Fechar
+                                    </button>
+                                    <a
+                                        href={showCredsModal.returnUrl || '#'}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        onClick={() => setShowCredsModal(null)}
+                                        className="flex-1 py-2.5 rounded-xl bg-brandAccent text-white text-xs font-bold hover:brightness-110 transition text-center flex items-center justify-center gap-2"
+                                    >
+                                        <Icon name="play" className="w-3.5 h-3.5" />
+                                        ABRIR {showCredsModal.provider.name.toUpperCase()}
+                                    </a>
                                 </div>
                             </div>
                         </div>
