@@ -654,6 +654,11 @@
                                                     <Icon name="play" className="w-5 h-5 text-white" style={{ fill: 'currentColor' }} />
                                                 </div>
                                             </div>
+                                            {provider && (
+                                                <div style={{ position: 'absolute', top: '6px', left: '6px', background: 'rgba(229,71,17,0.85)', borderRadius: '4px', padding: '2px 6px', fontSize: '8px', fontWeight: 800, color: '#fff', backdropFilter: 'blur(4px)', textTransform: 'uppercase', letterSpacing: '0.05em', maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {provider.name}
+                                                </div>
+                                            )}
                                             <div style={{ position: 'absolute', top: '6px', right: '6px', background: 'rgba(0,0,0,0.75)', borderRadius: '4px', padding: '2px 6px', fontSize: '10px', fontWeight: 700, color: '#FBBF24', display: 'flex', alignItems: 'center', gap: '3px', backdropFilter: 'blur(4px)' }}>
                                                 ★ {m.vote_average?.toFixed(1) || '8.0'}
                                             </div>
@@ -1441,7 +1446,8 @@
             // Finance widgets removed for compliance and simplicity
 
             // Calculate movies inside the user's favorites list
-            const myListMovies = [...moviesTrending, ...moviesPopular, ...moviesAction, ...moviesSciFi, ...moviesComedy, ...moviesDrama, ...moviesFamily, ...moviesHorror]
+            const myListMovies = [heroMovie, ...movies, ...moviesTrending, ...moviesPopular, ...moviesAction, ...moviesSciFi, ...moviesComedy, ...moviesDrama, ...moviesFamily, ...moviesHorror]
+                .filter(Boolean)
                 .filter((m, index, self) => self.findIndex(t => t.id === m.id) === index)
                 .filter(m => myList.includes(m.id));
 
@@ -1940,12 +1946,12 @@
                             )}
 
                             {/* App Header for Authenticated users */}
-                            <header className="flex items-center justify-between gap-4 py-3 lg:py-4 border-b border-white/5 select-none z-30 relative">
-                                <div className="flex items-center gap-1 font-sans text-3xl lg:text-4xl font-extrabold tracking-tight drop-shadow-[0_0_10px_rgba(59,130,246,0.2)]">
+                            <header className="flex items-center justify-between gap-4 py-4 lg:py-5 border-b border-white/5 select-none z-30 relative">
+                                <div className="flex items-center gap-1.5 font-sans text-4xl lg:text-5xl font-extrabold tracking-tight drop-shadow-[0_0_10px_rgba(59,130,246,0.2)]">
                                     <span style={{ color: 'var(--logo-text-color)' }} className="font-black tracking-tighter">
                                         {sidebarCollapsed ? 'A' : 'ALMEIDA'}
                                     </span>
-                                    <span style={{ color: 'var(--logo-plus-color)' }} className="font-black text-4xl lg:text-5xl drop-shadow-[0_0_15px_rgba(229,71,17,0.4)]">+</span>
+                                    <span style={{ color: 'var(--logo-plus-color)' }} className="font-black text-5xl lg:text-6xl drop-shadow-[0_0_15px_rgba(229,71,17,0.4)]">+</span>
                                 </div>
                                 {currentRoute === 'hub' && (
                                     <div className="relative max-w-sm w-full hidden md:block">
@@ -1984,11 +1990,11 @@
 
                                         <div className={`flex ${sidebarCollapsed ? 'flex-col items-center justify-center gap-2' : 'items-center gap-3'}`}>
                                             <div className="relative font-sans shrink-0">
-                                                {renderUserAvatar(currentUser, "w-12 h-12 rounded-xl")}
-                                                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#111827] bg-brandEmerald" />
+                                                {renderUserAvatar(currentUser, "w-14 h-14 rounded-2xl ring-2 ring-white/[0.06]")}
+                                                <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-[#111827] bg-brandEmerald shadow-lg shadow-brandEmerald/20" />
                                             </div>
                                             <div className={`flex-1 min-w-0 ${sidebarCollapsed ? 'hidden' : ''}`}>
-                                                <p className="text-xs text-slate-400 font-medium">Conta ativa</p>
+                                                <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Bem-vindo</p>
                                                 <p className="text-sm font-extrabold text-white truncate leading-tight mt-0.5">{currentUser.name}</p>
                                                 <span className="text-[9px] px-1.5 py-0.2 rounded bg-brandEmerald/15 text-brandEmerald font-bold border border-brandEmerald/25 uppercase tracking-widest mt-1 inline-block">
                                                     Ativo
