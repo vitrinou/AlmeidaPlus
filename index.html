@@ -25,9 +25,6 @@
     <!-- Supabase Client -->
     <script src="./supabase-client.js"></script>
 
-    <!-- HLS.js for Live TV -->
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8"></script>
-
     <script>
         tailwind.config = {
             theme: {
@@ -231,6 +228,19 @@
         input:checked+.slider:before {
             transform: translateX(16px);
         }
+
+        /* === MOBILE APP FOUNDATION === */
+        html, body { overscroll-behavior: none; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 16px); }
+        .safe-top { padding-top: env(safe-area-inset-top, 0px); }
+        .bottom-nav-safe { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+        .scroll-snap-x { scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .scroll-snap-x::-webkit-scrollbar { display: none; }
+        .scroll-snap-x > * { scroll-snap-align: start; }
+        * { -webkit-tap-highlight-color: transparent; }
+        button:active, a:active { opacity: 0.75; transform: scale(0.97); transition: transform 0.08s, opacity 0.08s; }
+        .catalog-row { -ms-overflow-style: none; scrollbar-width: none; }
+        .catalog-row::-webkit-scrollbar { display: none; }
     </style>
 </head>
 
@@ -629,8 +639,8 @@
                         </h3>
                         <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{moviesList.length} titulos</span>
                     </div>
-                    <div className="w-full overflow-x-auto pb-3 custom-scrollbar">
-                        <div className="flex gap-4 min-w-max px-1">
+                    <div className="w-full overflow-x-auto pb-3 custom-scrollbar catalog-row" style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}>
+                        <div className="flex gap-4 min-w-max px-1 scroll-snap-x">
                             {moviesList.map(m => {
                                 const provider = getMovieProvider(m);
                                 return (
@@ -681,62 +691,6 @@
             );
         };
 
-        // --- FALLBACK LIVE TV CHANNELS ---
-        const CANAIS_FIXOS = [
-            {
-                name: 'TV Brasil',
-                group: 'Público',
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/TV_Brasil_logo.svg/200px-TV_Brasil_logo.svg.png',
-                url: 'https://tvbrasil.ebc.com.br/ao-vivo',
-                stream: 'https://d2856rpu8ob5e8.cloudfront.net/out/v1/c258487aef564b34afe42c87b4e41054/index.m3u8'
-            },
-            {
-                name: 'Câmara dos Deputados',
-                group: 'Legislativo',
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Logotipo_TV_C%C3%A2mara.png/200px-Logotipo_TV_C%C3%A2mara.png',
-                url: 'https://www.camara.leg.br/tv/',
-                stream: 'https://cdntv.camara.leg.br/live/smil:camara.smil/playlist.m3u8'
-            },
-            {
-                name: 'Senado Federal',
-                group: 'Legislativo',
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/TV_Senado_logo.png/200px-TV_Senado_logo.png',
-                url: 'https://www12.senado.leg.br/tv',
-                stream: 'https://stream.senado.gov.br:1936/senado/senado/playlist.m3u8'
-            },
-            {
-                name: 'NASA TV',
-                group: 'Internacional',
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/200px-NASA_logo.svg.png',
-                url: 'https://www.nasa.gov/nasatv',
-                stream: 'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8'
-            }
-        ];
-
-        const parseM3U = (text) => {
-            const lines = text.split('\n');
-            const channels = [];
-            let current = {};
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (line.startsWith('#EXTINF:')) {
-                    const nameMatch = line.match(/,(.+)$/);
-                    const logoMatch = line.match(/tvg-logo="([^"]+)"/);
-                    const groupMatch = line.match(/group-title="([^"]+)"/);
-                    current = {
-                        name: nameMatch ? nameMatch[1].trim() : 'Canal',
-                        logo: logoMatch ? logoMatch[1] : '',
-                        group: groupMatch ? groupMatch[1] : 'Geral',
-                    };
-                } else if (line && !line.startsWith('#') && current.name) {
-                    current.stream = line;
-                    channels.push({ ...current, id: current.name });
-                    current = {};
-                }
-            }
-            return channels;
-        };
-
         function App() {
             // --- GLOBAL STATE FROM SUPABASE ---
             const [users, setUsers] = useState(() => {
@@ -759,15 +713,9 @@
                 const saved = localStorage.getItem('ap_currentUser');
                 if (saved) {
                     const user = JSON.parse(saved);
-                    return user.role === 'admin' ? 'admin' : 'hub';
+                    return 'hub';
                 }
                 return 'login';
-            });
-
-            // --- COLLAPSIBLE SIDEBAR STATE ---
-            const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-                const saved = localStorage.getItem('ap_sidebar_collapsed');
-                return saved ? JSON.parse(saved) : false;
             });
 
             // --- FILTER & LAYOUT STATES ---
@@ -815,14 +763,6 @@
 
             // Trailer modal state
             const [trailerModal, setTrailerModal] = useState(null);
-            // TV ao Vivo states
-            const [tvChannels, setTvChannels] = useState([]);
-            const [tvChannelActive, setTvChannelActive] = useState(null);
-            const [tvGroup, setTvGroup] = useState('Todos');
-            const [tvSearch, setTvSearch] = useState('');
-            const [tvLoading, setTvLoading] = useState(false);
-            const [tvPlayerError, setTvPlayerError] = useState(false);
-            const [tvIsPlaying, setTvIsPlaying] = useState(false);
             // Credentials modal state (for "assistir na plataforma" flow)
             const [showCredsModal, setShowCredsModal] = useState(null);
             const [dontRemindCreds, setDontRemindCreds] = useState(() => {
@@ -1173,85 +1113,6 @@
                 return () => { cancelled = true; };
             }, [currentRoute]);
 
-            // --- TV AO VIVO: CARREGAR CANAIS ---
-            useEffect(() => {
-                if (currentRoute !== 'tv') return;
-                setTvLoading(true);
-                const M3U_URL = 'https://raw.githubusercontent.com/joaoguidugli/FTA-IPTV-Brasil/master/playlist.m3u8';
-                const loadChannels = async () => {
-                    const proxies = [
-                        `https://api.allorigins.win/raw?url=${encodeURIComponent(M3U_URL)}`,
-                        `https://corsproxy.io/?url=${encodeURIComponent(M3U_URL)}`,
-                        M3U_URL
-                    ];
-                    for (const url of proxies) {
-                        try {
-                            const res = await fetch(url);
-                            if (!res.ok) continue;
-                            const text = await res.text();
-                            if (!text || text.length < 50 || text.includes('<!DOCTYPE')) continue;
-                            const parsed = parseM3U(text);
-                            if (parsed.length > 0) {
-                                const allChannels = [...CANAIS_FIXOS, ...parsed].filter(c => c.stream);
-                                setTvChannels(allChannels);
-                                setTvChannelActive(allChannels[0] || null);
-                                return;
-                            }
-                        } catch (e) {}
-                    }
-                    setTvChannels(CANAIS_FIXOS);
-                    setTvChannelActive(CANAIS_FIXOS[0] || null);
-                };
-                loadChannels().finally(() => setTvLoading(false));
-            }, [currentRoute]);
-
-            // --- TV AO VIVO: PLAYER HLS ---
-            useEffect(() => {
-                if (!tvChannelActive || currentRoute !== 'tv') return;
-                setTvPlayerError(false);
-                setTvIsPlaying(false);
-                const timer = setTimeout(() => {
-                    const video = document.getElementById('tv-player');
-                    if (!video) return;
-                    if (window._hlsInstance) {
-                        window._hlsInstance.destroy();
-                        window._hlsInstance = null;
-                    }
-                    video.src = '';
-                    const tryNative = () => {
-                        if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                            video.src = tvChannelActive.stream;
-                            video.play().catch(() => setTimeout(() => setTvPlayerError(true), 5000));
-                            return true;
-                        }
-                        return false;
-                    };
-                    if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-                        const hls = new Hls({ enableWorker: false, lowLatencyMode: false, maxBufferLength: 30 });
-                        hls.loadSource(tvChannelActive.stream);
-                        hls.attachMedia(video);
-                        hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(() => {}); });
-                        hls.on(Hls.Events.ERROR, (event, data) => {
-                            if (data.fatal) {
-                                hls.destroy();
-                                window._hlsInstance = null;
-                                if (!tryNative()) setTvPlayerError(true);
-                            }
-                        });
-                        window._hlsInstance = hls;
-                    } else if (!tryNative()) {
-                        setTvPlayerError(true);
-                    }
-                }, 200);
-                return () => {
-                    clearTimeout(timer);
-                    if (window._hlsInstance) {
-                        window._hlsInstance.destroy();
-                        window._hlsInstance = null;
-                    }
-                };
-            }, [tvChannelActive, currentRoute]);
-
             // --- TRIGGER TOAST ---
             const showToast = (message, type = 'success') => {
                 setToast({ visible: true, message, type });
@@ -1299,7 +1160,7 @@
                 setCurrentUser(authUser);
                 localStorage.setItem('ap_currentUser', JSON.stringify(authUser));
                 if (authUser.role === 'admin') {
-                    setCurrentRoute('admin');
+                    setCurrentRoute('hub');
                     showToast('Olá Almeida, painel administrativo desbloqueado!', 'success');
                 } else {
                     setCurrentRoute('hub');
@@ -2048,190 +1909,72 @@
                                 </div>
                             )}
 
-                            {/* App Header for Authenticated users */}
-                            <header className="flex items-center justify-between gap-3 py-2 lg:py-5 px-3 lg:px-0 border-b border-white/5 select-none z-30 relative">
-                                <div className="flex items-center gap-1 font-sans text-2xl lg:text-5xl font-extrabold tracking-tight drop-shadow-[0_0_10px_rgba(59,130,246,0.2)]">
-                                    <span style={{ color: 'var(--logo-text-color)' }} className="font-black tracking-tighter">
-                                        {sidebarCollapsed ? 'A' : 'ALMEIDA'}
-                                    </span>
-                                    <span style={{ color: 'var(--logo-plus-color)' }} className="font-black text-3xl lg:text-6xl drop-shadow-[0_0_15px_rgba(229,71,17,0.4)]">+</span>
-                                </div>
-                                {currentRoute === 'hub' && (
-                                    <div className="relative max-w-sm w-full hidden md:block">
-                                        <input
-                                            type="text"
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                            placeholder="Pesquisar filmes..."
-                                            className="w-full pl-10 pr-4 py-2 rounded-xl bg-black/40 border border-white/10 text-sm focus:outline-none focus:border-brandAccent transition-all duration-200 text-white placeholder-slate-500"
-                                        />
-                                        <Icon name="search" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                            {/* === TOP NAVIGATION BAR === */}
+                            <header className="sticky top-0 z-40 w-full bg-[#080A0F]/95 backdrop-blur-xl border-b border-white/[0.06]">
+                                <div className="flex items-center justify-between px-4 md:px-6 h-14 gap-4">
+                                    {/* Logo */}
+                                    <div className="flex items-center gap-0.5 font-black text-2xl tracking-tight shrink-0">
+                                        <span style={{ color: 'var(--logo-text-color)' }}>ALMEIDA</span>
+                                        <span style={{ color: 'var(--logo-plus-color)' }} className="text-3xl">+</span>
                                     </div>
-                                )}
-                            </header>
-
-                            {/* SIDEBAR TOGGLE BUTTON */}
-                            <button
-                                onClick={() => {
-                                    setSidebarCollapsed(!sidebarCollapsed);
-                                    localStorage.setItem('ap_sidebar_collapsed', JSON.stringify(!sidebarCollapsed));
-                                }}
-                                className="hidden lg:flex fixed bottom-6 left-6 w-12 h-12 rounded-full bg-brandAccent text-white shadow-neon-blue hover:shadow-neon-blue items-center justify-center z-40 transition-all duration-300 hover:scale-110 active:scale-95"
-                                title={sidebarCollapsed ? 'Expandir Menu' : 'Recolher Menu'}
-                            >
-                                <Icon name={sidebarCollapsed ? 'chevronRight' : 'chevronLeft'} className="w-6 h-6" />
-                            </button>
-
-                            <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-3 lg:p-6 items-start">
-
-                                {/* --- SIDEBAR LATERAL ESQUERDA (COLAPSÃ VEL - APENAS DESKTOP) --- */}
-                                <aside className={`hidden lg:flex ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-72'} w-full flex-col gap-5 shrink-0 lg:sticky lg:top-6 transition-all duration-300 ease-in-out`}>
-
-                                    {/* Profile Avatar widget */}
-                                    <div className={`glass-panel rounded-2xl p-5 flex ${sidebarCollapsed ? 'flex-col items-center' : 'flex-col'} gap-4 relative overflow-hidden`}>
-                                        <div className="absolute top-0 right-0 w-20 h-20 bg-brandAccent/10 rounded-full blur-xl pointer-events-none" />
-
-                                        <div className={`flex ${sidebarCollapsed ? 'flex-col items-center justify-center gap-2' : 'items-center gap-3'}`}>
-                                            <div className="relative font-sans shrink-0">
-                                                {renderUserAvatar(currentUser, "w-14 h-14 rounded-2xl ring-2 ring-white/[0.06]")}
-                                                <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-[#111827] bg-brandEmerald shadow-lg shadow-brandEmerald/20" />
-                                            </div>
-                                            <div className={`flex-1 min-w-0 ${sidebarCollapsed ? 'hidden' : ''}`}>
-                                                <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Bem-vindo</p>
-                                                <p className="text-sm font-extrabold text-white truncate leading-tight mt-0.5">{currentUser.name}</p>
-                                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-brandEmerald/15 text-brandEmerald font-bold border border-brandEmerald/25 uppercase tracking-widest mt-1 inline-block">
-                                                    Ativo
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Sidebar Menu */}
-                                    <nav className={`glass-panel rounded-2xl p-2.5 flex flex-col gap-1.5 transition-all duration-300 ${sidebarCollapsed ? 'items-center' : ''}`}>
-                                        <button
-                                            onClick={() => setCurrentRoute('settings')}
-                                            className={`w-full px-4 py-3 rounded-xl flex ${sidebarCollapsed ? 'justify-center' : ''} items-center gap-3 text-sm font-semibold transition-all duration-200 ${currentRoute === 'settings' ? 'bg-brandEmerald/15 text-brandEmerald border border-brandEmerald/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                                            style={currentRoute === 'settings' ? { borderLeft: '3px solid #10B981', borderTopColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: 'transparent' } : {}}
-                                            title={sidebarCollapsed ? 'Configurações' : ''}
-                                        >
-                                            <Icon name="user" className="w-5 h-5 shrink-0" />
-                                            {!sidebarCollapsed && <span>Configurações</span>}
+                                    {/* Nav links - desktop only */}
+                                    <nav className="hidden md:flex items-center gap-1">
+                                        <button onClick={() => setCurrentRoute('hub')} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${currentRoute === 'hub' ? 'text-white bg-white/10' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                                            <Icon name="home" className="w-4 h-4" /> Início
                                         </button>
-
-                                        {currentUser.role === 'admin' && (
-                                            <button
-                                                onClick={() => setCurrentRoute('admin')}
-                                                className={`w-full px-4 py-3 rounded-xl flex ${sidebarCollapsed ? 'justify-center' : ''} items-center gap-3 text-sm font-semibold transition-all duration-200 ${currentRoute === 'admin' ? 'bg-brandAccent/12 text-white border border-brandAccent/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                                                style={currentRoute === 'admin' ? { borderLeft: '3px solid #E54711', borderTopColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: 'transparent' } : {}}
-                                                title={sidebarCollapsed ? 'Painel Admin' : ''}
-                                            >
-                                                <Icon name="settings" className="w-5 h-5 shrink-0" />
-                                                {!sidebarCollapsed && <span>Painel Admin</span>}
+                                        <button onClick={() => setCurrentRoute('acessos')} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${currentRoute === 'acessos' ? 'text-white bg-white/10' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                                            <Icon name="key" className="w-4 h-4" /> Acessos
+                                        </button>
+                                        <button onClick={() => setCurrentRoute('financeiro')} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${currentRoute === 'financeiro' ? 'text-brandRose bg-brandRose/10' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                                            <Icon name="payments" className="w-4 h-4" /> PIX
+                                        </button>
+                                        {currentUser?.role === 'admin' && (
+                                            <button onClick={() => setCurrentRoute('admin')} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${currentRoute === 'admin' ? 'text-brandAccent bg-brandAccent/10' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                                                <Icon name="settings" className="w-4 h-4" /> Admin
                                             </button>
                                         )}
-
-                                        <button
-                                            onClick={() => {
-                                                setCurrentRoute('hub');
-                                                setSearchQuery('');
-                                            }}
-                                                className={`w-full px-4 py-3 rounded-xl flex ${sidebarCollapsed ? 'justify-center' : ''} items-center gap-3 text-sm font-semibold transition-all duration-200 ${currentRoute === 'hub' ? 'bg-brandAccent/12 text-white border border-brandAccent/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                                                style={currentRoute === 'hub' ? { borderLeft: '3px solid #E54711', borderTopColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: 'transparent' } : {}}
-                                                title={sidebarCollapsed ? 'Iní­cio / Hub' : ''}
-                                        >
-                                            <Icon name="home" className="w-5 h-5 shrink-0" />
-                                            {!sidebarCollapsed && <span>Iní­cio / Hub</span>}
-                                        </button>
-
-                                        <button
-                                            onClick={() => {
-                                                setCurrentRoute('acessos');
-                                            }}
-                                                className={`w-full px-4 py-3 rounded-xl flex ${sidebarCollapsed ? 'justify-center' : ''} items-center gap-3 text-sm font-semibold transition-all duration-200 ${currentRoute === 'acessos' ? 'bg-brandAccent/12 text-white border border-brandAccent/30' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                                                style={currentRoute === 'acessos' ? { borderLeft: '3px solid #E54711', borderTopColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: 'transparent' } : {}}
-                                                title={sidebarCollapsed ? 'Meus Acessos' : ''}
-                                        >
-                                            <Icon name="key" className="w-5 h-5 shrink-0" />
-                                            {!sidebarCollapsed && <span>Meus Acessos</span>}
-                                        </button>
-
-                                        <button
-                                            onClick={() => setCurrentRoute('tv')}
-                                            className={`w-full px-4 py-3 rounded-xl flex ${sidebarCollapsed ? 'justify-center' : ''} items-center gap-3 text-sm font-semibold transition-all duration-200 ${currentRoute === 'tv' ? 'bg-brandRose/10 text-brandRose border border-brandRose/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                                            style={currentRoute === 'tv' ? { borderLeft: '3px solid #F43F5E', borderTopColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: 'transparent' } : {}}
-                                            title={sidebarCollapsed ? 'TV ao Vivo' : ''}
-                                        >
-                                            <svg fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-5 h-5 shrink-0">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 20.25h12m-7.5-3v3m3-3v3m-10.125-3h17.25c.621 0 1.125-.504 1.125-1.125V4.875c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125z" />
-                                            </svg>
-                                            {!sidebarCollapsed && <span>TV ao Vivo</span>}
-                                            {!sidebarCollapsed && (
-                                                <span className="ml-auto text-[8px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-brandRose/15 text-brandRose border border-brandRose/20">
-                                                    NOVO
-                                                </span>
-                                            )}
-                                        </button>
-
-                                        <button
-                                            onClick={() => {
-                                                setCurrentRoute('financeiro');
-                                            }}
-                                            className={`w-full px-4 py-3 rounded-xl flex ${sidebarCollapsed ? 'justify-center' : ''} items-center gap-3 text-sm font-semibold transition-all duration-200 ${currentRoute === 'financeiro' ? 'bg-brandRose/15 text-brandRose border border-brandRose/20 shadow-neon-glow' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                                            title={sidebarCollapsed ? 'Financeiro' : ''}
-                                        >
-                                            <Icon name="payments" className="w-5 h-5 shrink-0" />
-                                            {!sidebarCollapsed && <span>Financeiro</span>}
-                                        </button>
-
-                                        <a
-                                            href="https://wa.me/5563999766887?text=Preciso%20de%20ajuda%20com%20o%20AlmeidaPlus"
-                                            target="_blank"
-                                            className={`w-full px-4 py-3 rounded-xl flex ${sidebarCollapsed ? 'justify-center' : ''} items-center gap-3 text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200`}
-                                            title={sidebarCollapsed ? 'WhatsApp Suporte' : ''}
-                                        >
-                                            <Icon name="support" className="w-5 h-5 shrink-0" />
-                                            {!sidebarCollapsed && <span>WhatsApp Suporte</span>}
-                                        </a>
-
-                                        {!sidebarCollapsed && <div className="h-[1px] bg-white/5 my-1" />}
-
-                                        {/* Links Legais da Plataforma no Menu */}
-                                        {!sidebarCollapsed && (
-                                            <div className="flex flex-col gap-2 mt-2 px-2 text-[10px] text-slate-500 font-medium">
-                                                <span className="hover:text-slate-400 cursor-pointer">Termos de Uso Privado</span>
-                                                <span className="hover:text-slate-400 cursor-pointer">Segurança de Dados</span>
+                                    </nav>
+                                    {/* Right side: search + avatar */}
+                                    <div className="flex items-center gap-3 shrink-0">
+                                        {currentRoute === 'hub' && (
+                                            <div className="relative hidden md:block w-52 lg:w-72">
+                                                <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Pesquisar filmes..." className="w-full pl-9 pr-4 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-brandAccent transition-all text-white placeholder-slate-500" />
+                                                <Icon name="search" className="w-4 h-4 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
                                             </div>
                                         )}
+                                        <div className="relative">
+                                            <button onClick={() => setCurrentRoute('settings')} className="relative" title="Meu Perfil">
+                                                {renderUserAvatar(currentUser, "w-8 h-8 rounded-xl ring-2 ring-white/[0.08] hover:ring-brandAccent/50 transition-all")}
+                                                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#080A0F] bg-brandEmerald" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </header>
 
-                                        {!sidebarCollapsed && <div className="h-[1px] bg-white/5 my-1" />}
+                            {/* === BUSCA MOBILE === */}
+                            {currentRoute === 'hub' && (
+                                <div className="md:hidden px-4 pt-3 pb-2">
+                                    <div className="relative">
+                                        <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Pesquisar filmes..." className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/6 border border-white/10 text-sm focus:outline-none focus:border-brandAccent transition-all text-white placeholder-slate-500" style={{ fontSize: '16px' }} />
+                                        <Icon name="search" className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                                    </div>
+                                </div>
+                            )}
 
-                                        <button
-                                            onClick={() => {
-                                                setCurrentUser(null);
-                                                localStorage.removeItem('ap_currentUser');
-                                                setCurrentRoute('login');
-                                                showToast('Logout realizado.', 'info');
-                                            }}
-                                            className={`w-full px-4 py-3 rounded-xl flex ${sidebarCollapsed ? 'justify-center' : ''} items-center gap-3 text-sm font-semibold text-slate-400 hover:text-brandRose hover:bg-brandRose/5 transition-all duration-200`}
-                                            title={sidebarCollapsed ? 'Sair' : ''}
-                                        >
-                                            <Icon name="logout" className="w-5 h-5 shrink-0" />
-                                            {!sidebarCollapsed && <span>Encerrar Sessão</span>}
-                                        </button>
-                                    </nav>
-                                </aside>
+                            <div className="flex flex-col min-h-[calc(100vh-3.5rem)] pb-16 md:pb-0">
 
                                 {/* ======================================================== */}
                                 {/*                      HUB (USER DASHBOARD)                */}
                                 {/* ======================================================== */}
                                 {currentRoute === 'hub' && (
-                                    <main className="flex-1 flex flex-col gap-0 min-w-0 route-fade overflow-hidden">
+                                    <main className="flex-1 flex flex-col gap-0 min-w-0 route-fade overflow-hidden px-4 md:px-6">
                                         {/* === HERO BANNER === */}
                                         {heroMovie && !searchQuery && (
                                             <div
                                                 className="relative w-full flex items-end"
                                                 style={{
-                                                    minHeight: '280px',
+                                                    minHeight: 'clamp(260px, 55vw, 420px)',
                                                     background: `linear-gradient(to top, #080A0F 15%, rgba(8,10,15,0.55) 55%, rgba(8,10,15,0.25) 100%), url(${heroMovie.backdrop_path}) center/cover no-repeat`,
                                                 }}
                                             >
@@ -2337,20 +2080,6 @@
                                             ))}
                                         </div>
 
-                                        {/* === BARRA DE BUSCA MOBILE === */}
-                                        <div className="md:hidden px-4 pt-4">
-                                            <div className="relative">
-                                                <input
-                                                    type="text"
-                                                    value={searchQuery}
-                                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                                    placeholder="Pesquisar filmes e séries..."
-                                                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/40 border border-white/10 text-sm focus:outline-none focus:border-brandAccent transition-all duration-200 text-white placeholder-slate-500"
-                                                />
-                                                <Icon name="search" className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                                            </div>
-                                        </div>
-
                                         {/* === CATÁLOGO === */}
                                         <div className="flex-1 px-3 md:px-6 py-3 md:py-6 flex flex-col gap-4 md:gap-8 overflow-y-auto custom-scrollbar">
                                             {isLoadingMovies && (
@@ -2420,7 +2149,7 @@
                                 {/*                   MEUS ACESSOS                          */}
                                 {/* ======================================================== */}
                                 {currentRoute === 'acessos' && (
-                                    <main className="flex-1 flex flex-col gap-6 min-w-0 route-fade">
+                                    <main className="flex-1 flex flex-col gap-6 min-w-0 route-fade px-4 md:px-6">
                                         <div className="glass-panel rounded-2xl p-6 flex flex-col gap-4">
                                             <h2 className="text-2xl font-extrabold text-white tracking-tight">Meus Acessos</h2>
                                             <p className="text-sm text-slate-400">Suas credenciais para os serviços de streaming liberados.</p>
@@ -2490,128 +2219,13 @@
                                     </main>
                                 )}
 
-                                {/* ======================================================== */}
-                                {/*                     TV AO VIVO                          */}
-                                {/* ======================================================== */}
-                                {currentRoute === 'tv' && (
-                                    <main className="flex-1 flex flex-col min-w-0 route-fade overflow-hidden" style={{ maxHeight: 'calc(100vh - 120px)' }}>
-                                        {/* Header da TV */}
-                                        <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-white/5 shrink-0">
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="w-2 h-2 rounded-full bg-brandRose animate-pulse" />
-                                                    <span className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-brandRose">Ao Vivo</span>
-                                                </div>
-                                                <h2 className="text-lg font-black text-white tracking-tight">TV ao Vivo</h2>
-                                                <span className="text-[10px] text-slate-500 font-mono">{tvChannels.length} canais</span>
-                                            </div>
-                                            <div className="relative hidden md:block">
-                                                <input type="text" value={tvSearch} onChange={e => setTvSearch(e.target.value)} placeholder="Buscar canal..." className="pl-9 pr-4 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brandAccent transition-all w-52" />
-                                                <Icon name="search" className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                                            </div>
-                                        </div>
 
-                                        <div className="flex flex-col lg:flex-row flex-1 overflow-hidden gap-0">
-                                            {/* Player */}
-                                            <div className="lg:flex-1 flex flex-col bg-black/60 border-r border-white/5">
-                                                <div className="relative w-full bg-black" style={{ aspectRatio: '16/9', minHeight: '200px' }}>
-                                                    {tvLoading && (
-                                                        <div className="absolute inset-0 flex items-center justify-center gap-3 flex-col">
-                                                            <div className="w-8 h-8 rounded-full border-2 border-brandAccent border-t-transparent animate-spin" />
-                                                            <span className="text-xs text-slate-400">Carregando canais...</span>
-                                                        </div>
-                                                    )}
-                                                    {tvPlayerError && (
-                                                        <div className="absolute inset-0 flex items-center justify-center flex-col gap-3 text-center p-6">
-                                                            <div className="w-12 h-12 rounded-2xl bg-brandRose/10 border border-brandRose/20 flex items-center justify-center">
-                                                                <Icon name="x" className="w-6 h-6 text-brandRose" />
-                                                            </div>
-                                                            <p className="text-sm font-bold text-white">Stream indisponível</p>
-                                                            <p className="text-xs text-slate-400">Este canal está fora do ar no momento.</p>
-                                                            <button onClick={() => { setTvPlayerError(false); const idx = tvChannels.indexOf(tvChannelActive); const next = tvChannels[idx + 1] || tvChannels[0]; setTvChannelActive(next); }} className="px-4 py-2 rounded-xl bg-brandAccent text-white text-xs font-bold hover:brightness-110 transition">Próximo Canal</button>
-                                                        </div>
-                                                    )}
-                                                    <video id="tv-player" className="w-full h-full object-contain" controls autoPlay playsInline preload="auto" crossOrigin="anonymous" onError={() => setTvPlayerError(true)} onPlay={() => { setTvIsPlaying(true); setTvPlayerError(false); }} onPause={() => setTvIsPlaying(false)} style={{ opacity: tvLoading || tvPlayerError ? 0 : 1, position: 'absolute', inset: 0 }} />
-                                                    {tvIsPlaying && (
-                                                        <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-sm border border-brandRose/30">
-                                                            <span className="w-1.5 h-1.5 rounded-full bg-brandRose animate-pulse" />
-                                                            <span className="text-[9px] font-extrabold text-brandRose uppercase tracking-widest">Ao Vivo</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                {tvChannelActive && (
-                                                    <div className="p-4 flex items-center justify-between gap-4 border-t border-white/5">
-                                                        <div className="flex items-center gap-3 min-w-0">
-                                                            {tvChannelActive.logo ? (
-                                                                <img src={tvChannelActive.logo} alt={tvChannelActive.name} className="w-10 h-10 rounded-xl object-contain bg-white/5 border border-white/10 p-1" onError={e => e.target.style.display='none'} />
-                                                            ) : (
-                                                                <div className="w-10 h-10 rounded-xl bg-brandAccent/10 border border-brandAccent/20 flex items-center justify-center">
-                                                                    <Icon name="play" className="w-5 h-5 text-brandAccent" />
-                                                                </div>
-                                                            )}
-                                                            <div className="min-w-0">
-                                                                <p className="font-extrabold text-white text-sm truncate">{tvChannelActive.name}</p>
-                                                                <p className="text-[10px] text-slate-500 uppercase tracking-wider">{tvChannelActive.group}</p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-2 shrink-0">
-                                                            <button onClick={() => { const video = document.getElementById('tv-player'); if (video) video.muted = !video.muted; }} className="p-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white transition text-xs font-bold" title="Mudo">🔊</button>
-                                                            <button onClick={() => { const video = document.getElementById('tv-player'); if (video && video.requestFullscreen) video.requestFullscreen(); }} className="p-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white transition text-xs font-bold" title="Tela cheia">⛶</button>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Lista de canais */}
-                                            <div className="w-full lg:w-80 xl:w-96 shrink-0 flex flex-col border-t lg:border-t-0 border-white/5 overflow-hidden">
-                                                <div className="px-3 py-3 border-b border-white/5 overflow-x-auto custom-scrollbar shrink-0">
-                                                    <div className="flex gap-2 min-w-max">
-                                                        {['Todos', ...new Set(tvChannels.map(c => c.group))].map(group => (
-                                                            <button key={group} onClick={() => setTvGroup(group)} className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all whitespace-nowrap ${tvGroup === group ? 'bg-brandAccent/10 border-brandAccent/30 text-brandAccent' : 'bg-transparent border-white/10 text-slate-500 hover:text-white hover:border-white/20'}`}>{group}</button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                                <div className="md:hidden px-3 py-2 border-b border-white/5 shrink-0">
-                                                    <input type="text" value={tvSearch} onChange={e => setTvSearch(e.target.value)} placeholder="Buscar canal..." className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brandAccent" />
-                                                </div>
-                                                <div className="flex-1 overflow-y-auto custom-scrollbar">
-                                                    {tvChannels.filter(c => { const m = tvGroup === 'Todos' || c.group === tvGroup; const s = !tvSearch || c.name.toLowerCase().includes(tvSearch.toLowerCase()); return m && s; }).map((canal, idx) => {
-                                                        const isActive = tvChannelActive?.stream === canal.stream;
-                                                        return (
-                                                            <button key={`${canal.stream}-${idx}`} onClick={() => { setTvPlayerError(false); setTvChannelActive(canal); }} className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all border-b border-white/[0.03] ${isActive ? 'bg-brandAccent/8 border-l-2 border-l-brandAccent' : 'hover:bg-white/[0.03] border-l-2 border-l-transparent'}`}>
-                                                                <div className="w-9 h-9 shrink-0 rounded-xl overflow-hidden bg-white/5 border border-white/10 flex items-center justify-center p-1">
-                                                                    {canal.logo ? <img src={canal.logo} alt={canal.name} className="w-full h-full object-contain" onError={e => e.target.style.display='none'} /> : <Icon name="play" className="w-4 h-4 text-slate-500" />}
-                                                                </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <p className={`text-xs font-bold truncate ${isActive ? 'text-white' : 'text-slate-300'}`}>{canal.name}</p>
-                                                                    <p className="text-[9px] text-slate-500 uppercase tracking-wider">{canal.group}</p>
-                                                                </div>
-                                                                {isActive && (
-                                                                    <span className="flex items-center gap-1 shrink-0">
-                                                                        <span className="w-1.5 h-1.5 rounded-full bg-brandRose animate-pulse" />
-                                                                        <span className="text-[8px] text-brandRose font-extrabold uppercase">Live</span>
-                                                                    </span>
-                                                                )}
-                                                            </button>
-                                                        );
-                                                    })}
-                                                    {tvChannels.filter(c => { const m = tvGroup === 'Todos' || c.group === tvGroup; const s = !tvSearch || c.name.toLowerCase().includes(tvSearch.toLowerCase()); return m && s; }).length === 0 && (
-                                                        <div className="flex flex-col items-center py-12 gap-3 text-center px-4">
-                                                            <Icon name="search" className="w-8 h-8 text-slate-700" />
-                                                            <p className="text-sm text-slate-500">Nenhum canal encontrado</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </main>
-                                )}
 
                                 {/* ======================================================== */}
                                 {/*             4. ADMINISTRATOR CONTROL PANEL               */}
                                 {/* ======================================================== */}
                                 {currentRoute === 'admin' && currentUser.role === 'admin' && (
-                                    <main className="flex-1 flex flex-col gap-6 min-w-0">
+                                    <main className="flex-1 flex flex-col gap-6 min-w-0 px-4 md:px-6">
 
                                         {/* Dashboard stats panel */}
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -3056,7 +2670,7 @@
                                 {/*                     FINANCEIRO / PIX                     */}
                                 {/* ======================================================== */}
                                 {currentRoute === 'financeiro' && (
-                                    <main className="flex-1 flex flex-col gap-6 min-w-0 route-fade">
+                                    <main className="flex-1 flex flex-col gap-6 min-w-0 route-fade px-4 md:px-6">
                                         <div className="glass-panel rounded-2xl p-6 flex flex-col gap-4">
                                             <h2 className="text-2xl font-extrabold text-white tracking-tight">Painel Financeiro</h2>
                                             <p className="text-sm text-slate-400">Pague sua fatura via PIX para não perder o acesso.</p>
@@ -3198,7 +2812,7 @@
 
                                 {/* --- SETTINGS SECTION --- */}
                                 {currentRoute === 'settings' && (
-                                    <div className="animate-float-up p-4 lg:p-8 space-y-8 pb-24">
+                                    <div className="animate-float-up p-4 lg:p-8 space-y-8 pb-24 px-4 md:px-6">
                                         <header className="mb-6">
                                             <h2 className="text-2xl font-black text-white">Configurações de Perfil</h2>
                                             <p className="text-slate-400 text-sm mt-1">Atualize sua foto ou mude sua senha.</p>
@@ -3344,36 +2958,30 @@
                                 )}
                             </div>
 
-                            {/* Mobile Bottom Navigation */}
-                            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#050B14]/95 backdrop-blur-xl border-t border-white/10 z-50 px-1 py-2 flex justify-around items-center shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-                                {currentUser.role === 'admin' && (
-                                    <button onClick={() => setCurrentRoute('admin')} className={`flex flex-col items-center gap-0.5 ${currentRoute === 'admin' ? 'text-brandAccent' : 'text-slate-500'}`}>
-                                        <Icon name="settings" className="w-[18px] h-[18px]" />
-                                        <span className="text-[8px] font-bold">Admin</span>
+                            {/* === MOBILE BOTTOM NAVIGATION === */}
+                            <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50" style={{ background: 'rgba(5, 8, 15, 0.97)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderTop: '1px solid rgba(255,255,255,0.08)', paddingBottom: 'env(safe-area-inset-bottom, 12px)', boxShadow: '0 -8px 32px rgba(0,0,0,0.6)' }}>
+                                <div className="flex justify-around items-center px-2 pt-2 pb-1">
+                                    <button onClick={() => setCurrentRoute('hub')} className="flex flex-col items-center gap-1 min-w-[56px] min-h-[44px] justify-center relative">
+                                        {currentRoute === 'hub' && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-brandAccent" />}
+                                        <Icon name="home" className={`w-5 h-5 transition-colors ${currentRoute === 'hub' ? 'text-brandAccent' : 'text-slate-500'}`} />
+                                        <span className={`text-[9px] font-bold tracking-wide transition-colors ${currentRoute === 'hub' ? 'text-brandAccent' : 'text-slate-600'}`}>INÍCIO</span>
                                     </button>
-                                )}
-                                <button onClick={() => setCurrentRoute('hub')} className={`flex flex-col items-center gap-0.5 ${currentRoute === 'hub' ? 'text-brandAccent' : 'text-slate-500'}`}>
-                                    <Icon name="home" className="w-[18px] h-[18px]" />
-                                    <span className="text-[8px] font-bold">Início</span>
-                                </button>
-                                <button onClick={() => setCurrentRoute('tv')} className={`flex flex-col items-center gap-0.5 ${currentRoute === 'tv' ? 'text-brandRose' : 'text-slate-500'}`}>
-                                    <svg fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-[18px] h-[18px]">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 20.25h12m-7.5-3v3m3-3v3m-10.125-3h17.25c.621 0 1.125-.504 1.125-1.125V4.875c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125z" />
-                                    </svg>
-                                    <span className="text-[8px] font-bold">TV</span>
-                                </button>
-                                <button onClick={() => setCurrentRoute('acessos')} className={`flex flex-col items-center gap-0.5 ${currentRoute === 'acessos' ? 'text-brandAccent' : 'text-slate-500'}`}>
-                                    <Icon name="key" className="w-[18px] h-[18px]" />
-                                    <span className="text-[8px] font-bold">Acessos</span>
-                                </button>
-                                <button onClick={() => setCurrentRoute('financeiro')} className={`flex flex-col items-center gap-0.5 ${currentRoute === 'financeiro' ? 'text-brandRose' : 'text-slate-500'}`}>
-                                    <Icon name="payments" className="w-[18px] h-[18px]" />
-                                    <span className="text-[8px] font-bold">PIX</span>
-                                </button>
-                                <button onClick={() => setCurrentRoute('settings')} className={`flex flex-col items-center gap-0.5 ${currentRoute === 'settings' ? 'text-brandEmerald' : 'text-slate-500'}`}>
-                                    <Icon name="user" className="w-[18px] h-[18px]" />
-                                    <span className="text-[8px] font-bold">Perfil</span>
-                                </button>
+                                    <button onClick={() => setCurrentRoute('acessos')} className="flex flex-col items-center gap-1 min-w-[56px] min-h-[44px] justify-center relative">
+                                        {currentRoute === 'acessos' && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-brandAccent" />}
+                                        <Icon name="key" className={`w-5 h-5 transition-colors ${currentRoute === 'acessos' ? 'text-brandAccent' : 'text-slate-500'}`} />
+                                        <span className={`text-[9px] font-bold tracking-wide transition-colors ${currentRoute === 'acessos' ? 'text-brandAccent' : 'text-slate-600'}`}>ACESSOS</span>
+                                    </button>
+                                    <button onClick={() => setCurrentRoute('financeiro')} className="flex flex-col items-center gap-1 min-w-[56px] min-h-[44px] justify-center relative">
+                                        {currentRoute === 'financeiro' && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-brandRose" />}
+                                        <Icon name="payments" className={`w-5 h-5 transition-colors ${currentRoute === 'financeiro' ? 'text-brandRose' : 'text-slate-500'}`} />
+                                        <span className={`text-[9px] font-bold tracking-wide transition-colors ${currentRoute === 'financeiro' ? 'text-brandRose' : 'text-slate-600'}`}>PIX</span>
+                                    </button>
+                                    <button onClick={() => setCurrentRoute('settings')} className="flex flex-col items-center gap-1 min-w-[56px] min-h-[44px] justify-center relative">
+                                        {currentRoute === 'settings' && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-brandEmerald" />}
+                                        <Icon name="user" className={`w-5 h-5 transition-colors ${currentRoute === 'settings' ? 'text-brandEmerald' : 'text-slate-500'}`} />
+                                        <span className={`text-[9px] font-bold tracking-wide transition-colors ${currentRoute === 'settings' ? 'text-brandEmerald' : 'text-slate-600'}`}>PERFIL</span>
+                                    </button>
+                                </div>
                             </nav>
 
                             {/* --- FOOTER MOVIDO PARA O MENU --- */}
