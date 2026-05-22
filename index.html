@@ -26,7 +26,7 @@
     <script src="./supabase-client.js"></script>
 
     <!-- HLS.js for Live TV -->
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8"></script>
 
     <script>
         tailwind.config = {
@@ -1177,21 +1177,32 @@
             useEffect(() => {
                 if (currentRoute !== 'tv') return;
                 setTvLoading(true);
-                const PROXY = 'https://api.allorigins.win/raw?url=';
                 const M3U_URL = 'https://raw.githubusercontent.com/joaoguidugli/FTA-IPTV-Brasil/master/playlist.m3u8';
-                fetch(`${PROXY}${encodeURIComponent(M3U_URL)}`)
-                    .then(r => r.text())
-                    .then(text => {
-                        const parsed = parseM3U(text);
-                        const allChannels = [...CANAIS_FIXOS, ...parsed].filter(c => c.stream);
-                        setTvChannels(allChannels);
-                        setTvChannelActive(allChannels[0] || null);
-                    })
-                    .catch(() => {
-                        setTvChannels(CANAIS_FIXOS);
-                        setTvChannelActive(CANAIS_FIXOS[0] || null);
-                    })
-                    .finally(() => setTvLoading(false));
+                const loadChannels = async () => {
+                    const proxies = [
+                        `https://api.allorigins.win/raw?url=${encodeURIComponent(M3U_URL)}`,
+                        `https://corsproxy.io/?url=${encodeURIComponent(M3U_URL)}`,
+                        M3U_URL
+                    ];
+                    for (const url of proxies) {
+                        try {
+                            const res = await fetch(url);
+                            if (!res.ok) continue;
+                            const text = await res.text();
+                            if (!text || text.length < 50 || text.includes('<!DOCTYPE')) continue;
+                            const parsed = parseM3U(text);
+                            if (parsed.length > 0) {
+                                const allChannels = [...CANAIS_FIXOS, ...parsed].filter(c => c.stream);
+                                setTvChannels(allChannels);
+                                setTvChannelActive(allChannels[0] || null);
+                                return;
+                            }
+                        } catch (e) {}
+                    }
+                    setTvChannels(CANAIS_FIXOS);
+                    setTvChannelActive(CANAIS_FIXOS[0] || null);
+                };
+                loadChannels().finally(() => setTvLoading(false));
             }, [currentRoute]);
 
             // --- TV AO VIVO: PLAYER HLS ---
@@ -1206,20 +1217,32 @@
                         window._hlsInstance.destroy();
                         window._hlsInstance = null;
                     }
+                    video.src = '';
+                    const tryNative = () => {
+                        if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                            video.src = tvChannelActive.stream;
+                            video.play().catch(() => setTimeout(() => setTvPlayerError(true), 5000));
+                            return true;
+                        }
+                        return false;
+                    };
                     if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-                        const hls = new Hls({ enableWorker: true, lowLatencyMode: true, maxBufferLength: 30, maxMaxBufferLength: 60 });
+                        const hls = new Hls({ enableWorker: false, lowLatencyMode: false, maxBufferLength: 30 });
                         hls.loadSource(tvChannelActive.stream);
                         hls.attachMedia(video);
                         hls.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(() => {}); });
-                        hls.on(Hls.Events.ERROR, (event, data) => { if (data.fatal) setTvPlayerError(true); });
+                        hls.on(Hls.Events.ERROR, (event, data) => {
+                            if (data.fatal) {
+                                hls.destroy();
+                                window._hlsInstance = null;
+                                if (!tryNative()) setTvPlayerError(true);
+                            }
+                        });
                         window._hlsInstance = hls;
-                    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                        video.src = tvChannelActive.stream;
-                        video.play().catch(() => {});
-                    } else {
+                    } else if (!tryNative()) {
                         setTvPlayerError(true);
                     }
-                }, 100);
+                }, 200);
                 return () => {
                     clearTimeout(timer);
                     if (window._hlsInstance) {
@@ -1520,40 +1543,30 @@
                 }
             };
 
-            const handleWatchMovie = (movie, closeModal = false) => {
-                const provider = getMovieProvider(movie);
-                setIsPlaying(true);
-
-                if (provider && provider.email && provider.password) {
-                    copyText(provider.password, 'Canal aberto. Senha copiada.');
-                    setActiveCredentialsToast({
-                        email: provider.email,
-                        password: provider.password,
-                        platform: provider.name
-                    });
-                    setTimeout(() => setActiveCredentialsToast(null), 7000);
-                } else {
-                    showToast('Canal aberto em nova aba.', 'success');
-                }
-
-                if (closeModal) setSelectedMovie(null);
-            };
-
             // --- TRAILER HANDLER ---
             const handleOpenTrailer = async (movie, closeModal = false) => {
                 const provider = getMovieProvider(movie);
                 if (closeModal) setSelectedMovie(null);
                 try {
+                    const findTrailer = (results) =>
+                        results?.find(v => v.type === 'Trailer' && v.site === 'YouTube') ||
+                        results?.find(v => (v.type === 'Teaser' || v.type === 'Trailer') && v.site === 'YouTube');
                     const data = await tmdbFetch(`movie/${movie.id}/videos`, { language: 'pt-BR' });
-                    let trailer = data.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+                    let trailer = findTrailer(data.results);
                     if (!trailer) {
                         const data2 = await tmdbFetch(`movie/${movie.id}/videos`, { language: 'en-US' });
-                        trailer = data2.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+                        trailer = findTrailer(data2.results);
+                    }
+                    if (!trailer) {
+                        const data3 = await tmdbFetch(`movie/${movie.id}/videos`, {});
+                        trailer = data3.results?.find(v => v.site === 'YouTube' && v.key);
                     }
                     if (trailer?.key) {
                         setTrailerModal({ movie, youtubeKey: trailer.key, providerUrl: provider?.url || null, providerName: provider?.name || 'Streaming' });
+                    } else if (provider?.url) {
+                        window.open(provider.url, '_blank');
                     } else {
-                        if (provider?.url) window.open(provider.url, '_blank');
+                        showToast('Nenhum trailer encontrado para este título.', 'error');
                     }
                 } catch (err) {
                     if (provider?.url) window.open(provider.url, '_blank');
@@ -2501,7 +2514,7 @@
                                         <div className="flex flex-col lg:flex-row flex-1 overflow-hidden gap-0">
                                             {/* Player */}
                                             <div className="lg:flex-1 flex flex-col bg-black/60 border-r border-white/5">
-                                                <div className="relative w-full bg-black" style={{ aspectRatio: '16/9' }}>
+                                                <div className="relative w-full bg-black" style={{ aspectRatio: '16/9', minHeight: '200px' }}>
                                                     {tvLoading && (
                                                         <div className="absolute inset-0 flex items-center justify-center gap-3 flex-col">
                                                             <div className="w-8 h-8 rounded-full border-2 border-brandAccent border-t-transparent animate-spin" />
@@ -2518,7 +2531,7 @@
                                                             <button onClick={() => { setTvPlayerError(false); const idx = tvChannels.indexOf(tvChannelActive); const next = tvChannels[idx + 1] || tvChannels[0]; setTvChannelActive(next); }} className="px-4 py-2 rounded-xl bg-brandAccent text-white text-xs font-bold hover:brightness-110 transition">Próximo Canal</button>
                                                         </div>
                                                     )}
-                                                    <video id="tv-player" className="w-full h-full object-contain" controls autoPlay playsInline onError={() => setTvPlayerError(true)} onPlay={() => { setTvIsPlaying(true); setTvPlayerError(false); }} onPause={() => setTvIsPlaying(false)} style={{ display: tvLoading || tvPlayerError ? 'none' : 'block' }} />
+                                                    <video id="tv-player" className="w-full h-full object-contain" controls autoPlay playsInline preload="auto" crossOrigin="anonymous" onError={() => setTvPlayerError(true)} onPlay={() => { setTvIsPlaying(true); setTvPlayerError(false); }} onPause={() => setTvIsPlaying(false)} style={{ opacity: tvLoading || tvPlayerError ? 0 : 1, position: 'absolute', inset: 0 }} />
                                                     {tvIsPlaying && (
                                                         <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-sm border border-brandRose/30">
                                                             <span className="w-1.5 h-1.5 rounded-full bg-brandRose animate-pulse" />
@@ -3140,21 +3153,14 @@
                                                             const provider = getMovieProvider(selectedMovie);
                                                             if (provider && provider.email && provider.password) {
                                                                 copyText(provider.password, 'Senha copiada.');
-                                                                setActiveCredentialsToast({
-                                                                    email: provider.email,
-                                                                    password: provider.password,
-                                                                    platform: provider.name
-                                                                });
-                                                                setTimeout(() => setActiveCredentialsToast(null), 7000);
                                                             } else {
                                                                 showToast('Credencial ainda nao cadastrada no admin.', 'error');
                                                             }
                                                         }}
-                                                        className="px-5 py-3 rounded-xl bg-brandAccent/15 hover:bg-brandAccent/25 text-brandAccent font-bold text-xs border border-brandAccent/20 flex items-center gap-2 transition"
-                                                        title="Copiar senha da plataforma"
+                                                        className="flex-1 min-w-[150px] py-3 rounded-xl bg-white/10 border border-white/15 font-bold text-[10px] text-white tracking-wider flex items-center justify-center gap-1.5 hover:bg-white/20 active:scale-[0.98] transition-all duration-200"
                                                     >
-                                                        <Icon name="copy" className="w-4 h-4" />
-                                                        <span className="hidden sm:inline">COPIAR SENHA</span>
+                                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+                                                        <span>COPIAR SENHA</span>
                                                     </button>
 
                                                     <button
